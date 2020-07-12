@@ -1,0 +1,301 @@
+
+use regex;
+use lalrpop_util::ParseError;
+use crate::syntax_tree;
+
+grammar;
+
+pub Program : syntax_tree::Program = {
+    <global_vars: VarDeclList> <functions: FuncDeclList> <body: Body> "." => syntax_tree::Program::new(<>)
+}
+
+VarDeclList: syntax_tree::VarDeclList = {
+    <list:(VarDecl)*> => {
+        list
+    }
+}
+
+VarDecl : syntax_tree::VarDecl = {
+    <id_list: IdList> ":" <kind: TypeDecl> ";" => syntax_tree::VarDecl::new(<>)
+}
+
+IdList: syntax_tree::IdList = {
+    <id_list: (<Id> ",")*> <id: Id> => {
+        let mut list = id_list;
+        list.push(id);
+        list
+    }
+}
+
+FuncDeclList: syntax_tree::FuncDeclList = {
+    <list:(FuncDecl)*> => {
+        list
+    }
+}
+
+
+FuncDecl: syntax_tree::FuncDecl = {
+    "func" <id:(Id)> "(" <params: ParamList> ")" ":" <kind: TypeDecl> <vars: VarDeclList> <body:Body> ";" => syntax_tree::FuncDecl::new(<>)
+}
+
+ParamList: syntax_tree::ParamList = {
+    <list: (<FuncParam> ",")*> <param: (FuncParam)?> => match param {
+        Some(param) => {
+            let mut list = list;
+            list.push(param);
+            list
+        }
+        None => list
+    }
+   
+}
+
+FuncParam: syntax_tree::ParamDecl = {
+    <id: Id> ":" <kind: TypeDecl> => syntax_tree::ParamDecl::new(<>)
+}
+
+Body: syntax_tree::StatList = { 
+    "body" <StatList> "end"
+}
+
+StatList : syntax_tree::StatList = {
+    <(<Stat> ";")+>
+}
+
+Stat: syntax_tree::Stat = {
+    <assign_stat:(AssignStat)> => syntax_tree::Stat::AssignStat(assign_stat),
+    <if_stat:(IfStat)> => syntax_tree::Stat::IfStat(if_stat),
+    <while_stat:(WhileStat)> => syntax_tree::Stat::WhileStat(while_stat),
+    <for_stat:(ForStat)> => syntax_tree::Stat::ForStat(for_stat),
+    <return_stat:(ReturnStat)> => syntax_tree::Stat::ReturnStat(return_stat),
+    <read_stat:(ReadStat)> => syntax_tree::Stat::ReadStat(read_stat),
+    <write_stat:(WriteStat)> => syntax_tree::Stat::WriteStat(write_stat),
+    <func_call:(FuncCall)> => syntax_tree::Stat::FuncCall(func_call),
+    "break" => syntax_tree::Stat::Break
+}
+
+AssignStat : syntax_tree::AssignStat = {
+    <id:Id> "=" <expr: Expr> => syntax_tree::AssignStat::new(<>)
+}
+
+IfStat : syntax_tree::IfStat = {
+    "if" <cond:Expr> "then" <if_body: StatList> <else_body: (ElseStat)?> "end" => syntax_tree::IfStat::new(<>)
+}
+
+ElseStat: syntax_tree::StatList = {
+    "else" <StatList>
+}
+
+WhileStat : syntax_tree::WhileStat = {
+    "while" <cond: Expr> "do" <body: StatList> "end" => syntax_tree::WhileStat::new(<>)
+}
+
+ForStat : syntax_tree::ForStat = {
+    "for" <id:Id> "=" <begin_expr: Expr> "to" <end_expr: Expr> "do" <body: StatList> "end" => syntax_tree::ForStat::new(<>)
+}
+
+ReturnStat : Option<syntax_tree::Expr> = {
+    "return" <expr: (Expr)?>  => {
+        expr
+    }
+}
+
+ReadStat : syntax_tree::IdList = {
+    "read" "(" <list: IdList> ")"  => {
+        list
+    }
+}
+
+WriteStat : syntax_tree::WriteStat = {
+    "write" "(" <list: ExprList> ")"  => syntax_tree::WriteStat::Write(list),
+    "writeln" "(" <list: ExprList> ")"  => syntax_tree::WriteStat::WriteLine(list),
+}
+
+FuncCall : syntax_tree::FuncCall = {
+    <id:Id> "(" <args: ExprList> ")" => syntax_tree::FuncCall::new(<>)
+}
+
+ExprList : syntax_tree::ExprList = {
+    <list: (<Expr> ",")*> <expr: (Expr)?> => match expr {
+        Some(expr) => {
+            let mut list = list;
+            list.push(expr);
+            list
+        }
+        None =>{ 
+            list
+        }
+    }
+}
+
+
+Expr: syntax_tree::Expr = {
+    <l: Expr> <op: LogicOp> <r: BoolTerm> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <BoolTerm> 
+}
+
+
+BoolTerm: syntax_tree::Expr = {
+    <l: RelTerm> <op: RelOp> <r: RelTerm> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <RelTerm>
+}
+
+RelTerm: syntax_tree::Expr = {
+    <l: RelTerm> <op: LowPrecOp> <r: LowTerm> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <LowTerm>
+}
+
+LowTerm: syntax_tree::Expr = {
+    <l: LowTerm> <op: HighPrecOp> <r: Factor> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(syntax_tree::Expr::Factor(r))),
+    <f: Factor> => syntax_tree::Expr::Factor(<>)
+}
+
+Factor: syntax_tree::Factor = {
+    <id: Id> => syntax_tree::Factor::Id(id),
+    <unary: UnaryOp> => syntax_tree::Factor::UnaryOp(<>),
+    <cond: CondExpr> => syntax_tree::Factor::CondExpr(<>),
+    <cast: CastExpr> => syntax_tree::Factor::CastExpr(<>),
+    <fcall: FuncCall> => syntax_tree::Factor::FuncCall(<>),
+    <ConstFactor> => syntax_tree::Factor::Const(<>)
+}
+
+UnaryOp: syntax_tree::UnaryOp = {
+    "-" <f: Factor> => syntax_tree::UnaryOp::Minus(Box::new(f)),
+    "not" <f: Factor> => syntax_tree::UnaryOp::Negate(Box::new(f)),
+}
+
+CondExpr: syntax_tree::CondExpr = {
+    "if" <cond: Expr> "then" <true_stat: Expr> "else" <false_stat: Expr> "end" => syntax_tree::CondExpr::new(<>)
+}
+
+CastExpr: syntax_tree::CastExpr = {
+    "integer" "(" <e: Expr> ")" => syntax_tree::CastExpr::Integer(Box::new(e)),
+    "real" "(" <e: Expr> ")" => syntax_tree::CastExpr::Real(Box::new(e)),
+}
+
+ConstFactor: syntax_tree::Const = {
+    <IntConst> => syntax_tree::Const::IntConst(<>),
+    <RealConst> => syntax_tree::Const::RealConst(<>),
+    <StrConst> => syntax_tree::Const::StrConst(<>),
+    "true" => syntax_tree::Const::BoolConst(true),
+    "false" => syntax_tree::Const::BoolConst(false)
+}
+
+
+LogicOp: syntax_tree::Operator = {
+    "and"  => syntax_tree::Operator::And,
+    "or" => syntax_tree::Operator::Or,
+}
+
+LowPrecOp: syntax_tree::Operator = {
+    "+" => syntax_tree::Operator::Add,
+    "-" => syntax_tree::Operator::Sub
+}
+
+HighPrecOp: syntax_tree::Operator = {
+    "*" => syntax_tree::Operator::Mul,
+    "/" => syntax_tree::Operator::Div
+}
+
+RelOp: syntax_tree::Operator = {
+    "==" => syntax_tree::Operator::Equal,
+    "!=" => syntax_tree::Operator::NotEqual,
+    ">" => syntax_tree::Operator::Greater,
+    "<" => syntax_tree::Operator::Less,
+    ">=" => syntax_tree::Operator::GreaterEqual,
+    "<=" => syntax_tree::Operator::LessEqual
+}
+
+
+TypeDecl: syntax_tree::Kind = {
+    "integer" => syntax_tree::Kind::Int,
+    "real" => syntax_tree::Kind::Real,
+    "string" => syntax_tree::Kind::Str,
+    "boolean" => syntax_tree::Kind::Bool,
+    "void" => syntax_tree::Kind::Void
+}
+
+Id: String = <s:r"[A-Za-z][A-Za-z_0-9]*"> => s.to_owned();
+IntConst: i32 = <s:r"[0-9]+"> => s.parse::<i32>().unwrap();
+RealConst: f64 = <s:r"[0-9]*\.[0-9]+"> => s.parse::<f64>().unwrap();
+StrConst: String = <s:r#""[^"\n]*""#> => s.to_owned();
+
+// define lexer rules
+// keywords and symbols in match (high priority)
+// id, numbers and strings in else (low priority)
+match {
+
+    // ignore white spaces and comments
+    r"\s+" => {},
+    r"#[^\n]*" => {},
+
+    // punctuation
+    r"\." => ".",
+    r":" => ":",
+    r";" => ";",
+    r"," => ",",
+    r"\(" => "(",
+    r"\)" => ")",
+    r"=" => "=",
+
+    // keywords
+    r"if" => "if",
+    r"func" => "func",
+    r"body" => "body",
+    r"end" => "end",
+    r"break" => "break",  
+    r"then" => "then",
+    r"else" => "else",
+    r"while" => "while",
+    r"for" => "for",
+    r"do" => "do",
+    r"to" => "to",
+    r"return" => "return",
+
+    // built-in functions
+    r"read" => "read",
+    r"write" => "write",
+    r"writeln" => "writeln",
+
+    // math operators
+    r"\+" => "+",
+    r"\-" => "-",
+    r"\*" => "*",
+    r"/" => "/",
+    
+    // boolean operators
+    r"and" => "and",
+    r"or" => "or",
+    r"not" => "not",
+    
+    // order and equality operators
+    r"==" => "==",
+    r"!=" => "!=",
+    r">" => ">",
+    r">=" => ">=",
+    r"<" => "<",
+    r"<=" => "<=",
+ 
+
+    // built-in types
+    r"integer" => "integer",
+    r"real" => "real",
+    r"string" => "string",
+    r"boolean" => "boolean",
+    r"void" => "void",
+    
+    // logic values 
+    r"true" => "true",
+    r"false" => "false",
+} else {
+    // id
+    r"[A-Za-z][A-Za-z_0-9]*",
+    // integer
+    r"[0-9]+",
+    // float
+    r"[0-9]*\.[0-9]+",
+    // string
+    r#""[^"\n]*""#
+}
+
+
