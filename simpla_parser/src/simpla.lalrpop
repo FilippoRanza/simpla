@@ -6,7 +6,7 @@ use crate::syntax_tree;
 grammar;
 
 pub Program : syntax_tree::Program = {
-    <global_vars: VarDeclList> <functions: FuncDeclList> <body: Body> "." => syntax_tree::Program::new(<>)
+    <global_vars: VarDeclList> <functions: FuncDeclList> <body: Body> DotPunct => syntax_tree::Program::new(<>)
 }
 
 VarDeclList: syntax_tree::VarDeclList = {
@@ -16,11 +16,11 @@ VarDeclList: syntax_tree::VarDeclList = {
 }
 
 VarDecl : syntax_tree::VarDecl = {
-    <id_list: IdList> ":" <kind: TypeDecl> ";" => syntax_tree::VarDecl::new(<>)
+    <id_list: IdList> ColonPunct <kind: TypeDecl> SemicolonPunct => syntax_tree::VarDecl::new(<>)
 }
 
 IdList: syntax_tree::IdList = {
-    <id_list: (<Id> ",")*> <id: Id> => {
+    <id_list: (<Id> CommaPunct)*> <id: Id> => {
         let mut list = id_list;
         list.push(id);
         list
@@ -35,11 +35,11 @@ FuncDeclList: syntax_tree::FuncDeclList = {
 
 
 FuncDecl: syntax_tree::FuncDecl = {
-    "func" <id:(Id)> "(" <params: ParamList> ")" ":" <kind: TypeDecl> <vars: VarDeclList> <body:Body> ";" => syntax_tree::FuncDecl::new(<>)
+    FuncKW <id:(Id)> OpenBracketPunct <params: ParamList> CloseBracketPunct ColonPunct <kind: TypeDecl> <vars: VarDeclList> <body:Body> SemicolonPunct => syntax_tree::FuncDecl::new(<>)
 }
 
 ParamList: syntax_tree::ParamList = {
-    <list: (<FuncParam> ",")*> <param: (FuncParam)?> => match param {
+    <list: (<FuncParam> CommaPunct)*> <param: (FuncParam)?> => match param {
         Some(param) => {
             let mut list = list;
             list.push(param);
@@ -51,15 +51,15 @@ ParamList: syntax_tree::ParamList = {
 }
 
 FuncParam: syntax_tree::ParamDecl = {
-    <id: Id> ":" <kind: TypeDecl> => syntax_tree::ParamDecl::new(<>)
+    <id: Id> ColonPunct <kind: TypeDecl> => syntax_tree::ParamDecl::new(<>)
 }
 
 Body: syntax_tree::StatList = { 
-    "body" <StatList> "end"
+    BodyKW <StatList> EndKW
 }
 
 StatList : syntax_tree::StatList = {
-    <(<Stat> ";")+>
+    <(<Stat> SemicolonPunct)+>
 }
 
 Stat: syntax_tree::Stat = {
@@ -71,52 +71,52 @@ Stat: syntax_tree::Stat = {
     <read_stat:(ReadStat)> => syntax_tree::Stat::ReadStat(read_stat),
     <write_stat:(WriteStat)> => syntax_tree::Stat::WriteStat(write_stat),
     <func_call:(FuncCall)> => syntax_tree::Stat::FuncCall(func_call),
-    "break" => syntax_tree::Stat::Break
+    BreakKW => syntax_tree::Stat::Break
 }
 
 AssignStat : syntax_tree::AssignStat = {
-    <id:Id> "=" <expr: Expr> => syntax_tree::AssignStat::new(<>)
+    <id:Id> AssignPunct <expr: Expr> => syntax_tree::AssignStat::new(<>)
 }
 
 IfStat : syntax_tree::IfStat = {
-    "if" <cond:Expr> "then" <if_body: StatList> <else_body: (ElseStat)?> "end" => syntax_tree::IfStat::new(<>)
+    IfKW <cond:Expr> ThenKW <if_body: StatList> <else_body: (ElseStat)?> EndKW => syntax_tree::IfStat::new(<>)
 }
 
 ElseStat: syntax_tree::StatList = {
-    "else" <StatList>
+    ElseKW <StatList>
 }
 
 WhileStat : syntax_tree::WhileStat = {
-    "while" <cond: Expr> "do" <body: StatList> "end" => syntax_tree::WhileStat::new(<>)
+    WhileKW <cond: Expr> DoKW <body: StatList> EndKW => syntax_tree::WhileStat::new(<>)
 }
 
 ForStat : syntax_tree::ForStat = {
-    "for" <id:Id> "=" <begin_expr: Expr> "to" <end_expr: Expr> "do" <body: StatList> "end" => syntax_tree::ForStat::new(<>)
+    ForKW <id:Id> AssignPunct <begin_expr: Expr> ToKW <end_expr: Expr> DoKW <body: StatList> EndKW => syntax_tree::ForStat::new(<>)
 }
 
 ReturnStat : Option<syntax_tree::Expr> = {
-    "return" <expr: (Expr)?>  => {
+    ReturnKW <expr: (Expr)?>  => {
         expr
     }
 }
 
 ReadStat : syntax_tree::IdList = {
-    "read" "(" <list: IdList> ")"  => {
+    ReadKW OpenBracketPunct <list: IdList> CloseBracketPunct  => {
         list
     }
 }
 
 WriteStat : syntax_tree::WriteStat = {
-    "write" "(" <list: ExprList> ")"  => syntax_tree::WriteStat::Write(list),
-    "writeln" "(" <list: ExprList> ")"  => syntax_tree::WriteStat::WriteLine(list),
+    WriteKW OpenBracketPunct <list: ExprList> CloseBracketPunct  => syntax_tree::WriteStat::Write(list),
+    WritelnKW OpenBracketPunct <list: ExprList> CloseBracketPunct  => syntax_tree::WriteStat::WriteLine(list),
 }
 
 FuncCall : syntax_tree::FuncCall = {
-    <id:Id> "(" <args: ExprList> ")" => syntax_tree::FuncCall::new(<>)
+    <id:Id> OpenBracketPunct <args: ExprList> CloseBracketPunct => syntax_tree::FuncCall::new(<>)
 }
 
 ExprList : syntax_tree::ExprList = {
-    <list: (<Expr> ",")*> <expr: (Expr)?> => match expr {
+    <list: (<Expr> CommaPunct)*> <expr: (Expr)?> => match expr {
         Some(expr) => {
             let mut list = list;
             list.push(expr);
@@ -160,65 +160,123 @@ Factor: syntax_tree::Factor = {
 }
 
 UnaryOp: syntax_tree::UnaryOp = {
-    "-" <f: Factor> => syntax_tree::UnaryOp::Minus(Box::new(f)),
-    "not" <f: Factor> => syntax_tree::UnaryOp::Negate(Box::new(f)),
+    MinusPunct <f: Factor> => syntax_tree::UnaryOp::Minus(Box::new(f)),
+    NotKW <f: Factor> => syntax_tree::UnaryOp::Negate(Box::new(f)),
 }
 
 CondExpr: syntax_tree::CondExpr = {
-    "if" <cond: Expr> "then" <true_stat: Expr> "else" <false_stat: Expr> "end" => syntax_tree::CondExpr::new(<>)
+    IfKW <cond: Expr> ThenKW <true_stat: Expr> ElseKW <false_stat: Expr> EndKW => syntax_tree::CondExpr::new(<>)
 }
 
 CastExpr: syntax_tree::CastExpr = {
-    "integer" "(" <e: Expr> ")" => syntax_tree::CastExpr::Integer(Box::new(e)),
-    "real" "(" <e: Expr> ")" => syntax_tree::CastExpr::Real(Box::new(e)),
+    IntegerKW OpenBracketPunct <e: Expr> CloseBracketPunct => syntax_tree::CastExpr::Integer(Box::new(e)),
+    RealKW OpenBracketPunct <e: Expr> CloseBracketPunct => syntax_tree::CastExpr::Real(Box::new(e)),
 }
 
 ConstFactor: syntax_tree::Const = {
     <IntConst> => syntax_tree::Const::IntConst(<>),
     <RealConst> => syntax_tree::Const::RealConst(<>),
     <StrConst> => syntax_tree::Const::StrConst(<>),
-    "true" => syntax_tree::Const::BoolConst(true),
-    "false" => syntax_tree::Const::BoolConst(false)
+    TrueKW => syntax_tree::Const::BoolConst(true),
+    FalseKW => syntax_tree::Const::BoolConst(false)
 }
 
 
 LogicOp: syntax_tree::Operator = {
-    "and"  => syntax_tree::Operator::And,
-    "or" => syntax_tree::Operator::Or,
+    AndKW  => syntax_tree::Operator::And,
+    OrKW => syntax_tree::Operator::Or,
 }
 
 LowPrecOp: syntax_tree::Operator = {
-    "+" => syntax_tree::Operator::Add,
-    "-" => syntax_tree::Operator::Sub
+    PlusPunct => syntax_tree::Operator::Add,
+    MinusPunct => syntax_tree::Operator::Sub
 }
 
 HighPrecOp: syntax_tree::Operator = {
-    "*" => syntax_tree::Operator::Mul,
-    "/" => syntax_tree::Operator::Div
+    MultiplyPunct => syntax_tree::Operator::Mul,
+    DividePunct => syntax_tree::Operator::Div
 }
 
 RelOp: syntax_tree::Operator = {
-    "==" => syntax_tree::Operator::Equal,
-    "!=" => syntax_tree::Operator::NotEqual,
-    ">" => syntax_tree::Operator::Greater,
-    "<" => syntax_tree::Operator::Less,
-    ">=" => syntax_tree::Operator::GreaterEqual,
-    "<=" => syntax_tree::Operator::LessEqual
+    EqualPunct => syntax_tree::Operator::Equal,
+    NotEqualPunct => syntax_tree::Operator::NotEqual,
+    GreaterPunct => syntax_tree::Operator::Greater,
+    LessPunct => syntax_tree::Operator::Less,
+    GreaterEqualPunct => syntax_tree::Operator::GreaterEqual,
+    LessEqualPunct => syntax_tree::Operator::LessEqual
 }
 
 
 TypeDecl: syntax_tree::Kind = {
-    "integer" => syntax_tree::Kind::Int,
-    "real" => syntax_tree::Kind::Real,
-    "string" => syntax_tree::Kind::Str,
-    "boolean" => syntax_tree::Kind::Bool,
-    "void" => syntax_tree::Kind::Void
+    IntegerKW => syntax_tree::Kind::Int,
+    RealKW => syntax_tree::Kind::Real,
+    StringKW => syntax_tree::Kind::Str,
+    BooleanKW => syntax_tree::Kind::Bool,
+    VoidKW => syntax_tree::Kind::Void
 }
 
 Id: String = <s:r"[A-Za-z][A-Za-z_0-9]*"> => s.to_owned();
 IntConst: i32 = <s:r"[0-9]+"> => s.parse::<i32>().unwrap();
 RealConst: f64 = <s:r"[0-9]*\.[0-9]+"> => s.parse::<f64>().unwrap();
 StrConst: String = <s:r#""[^"\n]*""#> => s.to_owned();
+
+// punctuation
+DotPunct = <".">;
+ColonPunct = <":">;
+SemicolonPunct = <";">;
+CommaPunct = <",">;
+OpenBracketPunct = <"(">;
+CloseBracketPunct = <")">;
+AssignPunct = <"=">;
+
+// Control Flow Keywords
+IfKW = <"if">;
+FuncKW = <"func">;
+BodyKW = <"body">;
+EndKW = <"end">;
+BreakKW = <"break">;
+ThenKW = <"then">;
+ElseKW = <"else">;
+WhileKW = <"while">;
+ForKW = <"for">;
+DoKW = <"do">;
+ToKW = <"to">;
+ReturnKW = <"return">;
+
+// built-in functions
+ReadKW = <"read">;
+WriteKW = <"write">;
+WritelnKW = <"writeln">;
+
+// math operators
+PlusPunct = <"+">;
+MinusPunct = <"-">;
+MultiplyPunct = <"*">;
+DividePunct = <"/">;
+
+// boolean operators
+AndKW = <"and">;
+OrKW = <"or">;
+NotKW = <"not">;
+
+// order and equality operators
+EqualPunct = <"==">;
+NotEqualPunct = <"!=">;
+GreaterPunct = <">">;
+GreaterEqualPunct = <">=">;
+LessPunct = <"<">;
+LessEqualPunct = <"<=">;
+
+// built-in types
+IntegerKW = <"integer">;
+RealKW = <"real">;
+StringKW = <"string">;
+BooleanKW = <"boolean">;
+VoidKW = <"void">;
+
+// logic valus
+TrueKW = <"true">;
+FalseKW = <"false">;
 
 // define lexer rules
 // keywords and symbols in match (high priority)
@@ -276,7 +334,6 @@ match {
     r"<" => "<",
     r"<=" => "<=",
  
-
     // built-in types
     r"integer" => "integer",
     r"real" => "real",

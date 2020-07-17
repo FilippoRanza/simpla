@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate lalrpop_util;
-lalrpop_mod!(grammar);
+lalrpop_mod!(simpla);
 
 pub mod syntax_tree;
 
@@ -8,7 +8,7 @@ pub mod syntax_tree;
 mod tests {
 
     use super::*;
-    use crate::grammar;
+    use crate::simpla;
 
     #[test]
     fn parse_test() {
@@ -42,7 +42,7 @@ mod tests {
                 stampaFattoriali(numero);
             end;
         end."#;
-        let parser = grammar::ProgramParser::new();
+        let parser = simpla::ProgramParser::new();
         match parser.parse(code) {
             Ok(_) => assert!(true),
             Err(err) => assert!(false, "{:?}", err)
