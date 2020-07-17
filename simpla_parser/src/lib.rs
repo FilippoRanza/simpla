@@ -13,40 +13,39 @@ mod tests {
     #[test]
     fn parse_test() {
         let code = r#"
-        numero: integer;
-        func fattoriale(n: integer): integer
+        number: integer;
+        func factorial(n: integer): integer
           fact: integer;
           body
             if n == 0 then
                 fact = 1;
             else    
-                fact = n * fattoriale(n - 1);
+                fact = n * factorial(n - 1);
             end;
             return fact;
         end;
         
-        func stampaFattoriali(tot: integer): void
+        func print_factorials(tot: integer): void
           i, f: integer;
           body
             for i=0 to tot do
-                f = fattoriale(i);
-                writeln("Il fattoriale di ", i, "è ", f);
+                f = factorial(i);
+                writeln(i, "factorial is", f);
             end;
           end;
         # a comment
         body  
-            read(numero);
-            if numero < 0 then
-                writeln("Il numero ", numero, "non è valido");
+            read(number);
+            if number < 0 then
+                writeln(number, "is not a valid number");
             else    
-                stampaFattoriali(numero);
+                print_factorials(number);
             end;
         end."#;
         let parser = simpla::ProgramParser::new();
         match parser.parse(code) {
             Ok(_) => assert!(true),
-            Err(err) => assert!(false, "{:?}", err)
-        }  
+            Err(err) => assert!(false, "{:?}", err),
+        }
     }
-
 }

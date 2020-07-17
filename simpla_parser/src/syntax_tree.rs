@@ -1,14 +1,15 @@
-
 pub struct Program {
     global_vars: VarDeclList,
     functions: FuncDeclList,
-    body: StatList
+    body: StatList,
 }
 
 impl Program {
     pub fn new(global_vars: VarDeclList, functions: FuncDeclList, body: StatList) -> Self {
         Self {
-            global_vars, functions, body
+            global_vars,
+            functions,
+            body,
         }
     }
 }
@@ -16,9 +17,9 @@ impl Program {
 pub enum Kind {
     Int,
     Real,
-    Str, 
+    Str,
     Bool,
-    Void
+    Void,
 }
 
 pub enum Operator {
@@ -33,33 +34,28 @@ pub enum Operator {
     Mul,
     Div,
     And,
-    Or
+    Or,
 }
 
 pub struct VarDecl {
     id_list: IdList,
-    kind: Kind
+    kind: Kind,
 }
 
 impl VarDecl {
     pub fn new(id_list: IdList, kind: Kind) -> Self {
-        Self {
-            id_list,
-            kind
-        }
+        Self { id_list, kind }
     }
 }
 
 pub struct ParamDecl {
     id: String,
-    kind: Kind
+    kind: Kind,
 }
 
 impl ParamDecl {
     pub fn new(id: String, kind: Kind) -> Self {
-        Self {
-            id, kind
-        }
+        Self { id, kind }
     }
 }
 
@@ -68,19 +64,29 @@ pub struct FuncDecl {
     kind: Kind,
     params: ParamList,
     vars: VarDeclList,
-    body: StatList
+    body: StatList,
 }
 
 impl FuncDecl {
-    pub fn new(id: String, params: ParamList, kind: Kind, vars: VarDeclList, body: StatList) -> Self {
+    pub fn new(
+        id: String,
+        params: ParamList,
+        kind: Kind,
+        vars: VarDeclList,
+        body: StatList,
+    ) -> Self {
         Self {
-            id, params, kind, vars, body
+            id,
+            params,
+            kind,
+            vars,
+            body,
         }
     }
 }
 
 pub enum Stat {
-    AssignStat(AssignStat), 
+    AssignStat(AssignStat),
     IfStat(IfStat),
     WhileStat(WhileStat),
     ForStat(ForStat),
@@ -88,48 +94,44 @@ pub enum Stat {
     ReadStat(IdList),
     WriteStat(WriteStat),
     FuncCall(FuncCall),
-    Break
+    Break,
 }
 
 pub struct AssignStat {
     id: String,
-    expr: Expr
+    expr: Expr,
 }
 
 impl AssignStat {
     pub fn new(id: String, expr: Expr) -> Self {
-        Self {
-            id, expr
-        }
-    } 
+        Self { id, expr }
+    }
 }
-
 
 pub struct IfStat {
     cond: Expr,
     if_body: StatList,
-    else_body: Option<StatList>
+    else_body: Option<StatList>,
 }
 
 impl IfStat {
     pub fn new(cond: Expr, if_body: StatList, else_body: Option<StatList>) -> Self {
         Self {
-            cond, if_body, else_body
+            cond,
+            if_body,
+            else_body,
         }
     }
 }
 
-
 pub struct WhileStat {
     cond: Expr,
-    body: StatList
+    body: StatList,
 }
 
 impl WhileStat {
     pub fn new(cond: Expr, body: StatList) -> Self {
-        Self {
-            cond, body
-        }
+        Self { cond, body }
     }
 }
 
@@ -137,33 +139,33 @@ pub struct ForStat {
     id: String,
     begin_expr: Expr,
     end_expr: Expr,
-    body: StatList
+    body: StatList,
 }
 
 impl ForStat {
     pub fn new(id: String, begin_expr: Expr, end_expr: Expr, body: StatList) -> Self {
         Self {
-            id, begin_expr, end_expr, body
+            id,
+            begin_expr,
+            end_expr,
+            body,
         }
     }
 }
 
-
 pub enum WriteStat {
     WriteLine(ExprList),
-    Write(ExprList)
+    Write(ExprList),
 }
 
 pub struct FuncCall {
     id: String,
-    args: ExprList
+    args: ExprList,
 }
 
 impl FuncCall {
     pub fn new(id: String, args: ExprList) -> Self {
-        Self {
-            id, args
-        }
+        Self { id, args }
     }
 }
 
@@ -174,29 +176,29 @@ pub enum Expr {
 
 pub enum Factor {
     Id(String),
-    UnaryOp(UnaryOp),   
+    UnaryOp(UnaryOp),
     CondExpr(CondExpr),
     CastExpr(CastExpr),
     FuncCall(FuncCall),
-    Const(Const)
+    Const(Const),
 }
 
 pub enum Const {
     IntConst(i32),
     RealConst(f64),
     StrConst(String),
-    BoolConst(bool)
+    BoolConst(bool),
 }
 
 pub enum UnaryOp {
     Negate(Box<Factor>),
-    Minus(Box<Factor>)
+    Minus(Box<Factor>),
 }
 
 pub struct CondExpr {
     cond: Box<Expr>,
     true_stat: Box<Expr>,
-    false_stat: Box<Expr>
+    false_stat: Box<Expr>,
 }
 
 impl CondExpr {
@@ -204,18 +206,17 @@ impl CondExpr {
         Self {
             cond: Box::new(cond),
             true_stat: Box::new(true_stat),
-            false_stat: Box::new(false_stat)
+            false_stat: Box::new(false_stat),
         }
     }
 }
 
-
 pub enum CastExpr {
     Integer(Box<Expr>),
-    Real(Box<Expr>)
+    Real(Box<Expr>),
 }
 
-pub type StatList =  Vec<Stat>;
+pub type StatList = Vec<Stat>;
 pub type VarDeclList = Vec<VarDecl>;
 pub type ParamList = Vec<ParamDecl>;
 pub type IdList = Vec<String>;
