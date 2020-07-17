@@ -1,7 +1,8 @@
+#[derive(PartialEq, Debug)]
 pub struct Program {
-    global_vars: VarDeclList,
-    functions: FuncDeclList,
-    body: StatList,
+    pub global_vars: VarDeclList,
+    pub functions: FuncDeclList,
+    pub body: StatList,
 }
 
 impl Program {
@@ -14,6 +15,7 @@ impl Program {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Kind {
     Int,
     Real,
@@ -22,6 +24,7 @@ pub enum Kind {
     Void,
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Operator {
     Equal,
     NotEqual,
@@ -37,6 +40,7 @@ pub enum Operator {
     Or,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct VarDecl {
     id_list: IdList,
     kind: Kind,
@@ -48,6 +52,7 @@ impl VarDecl {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct ParamDecl {
     id: String,
     kind: Kind,
@@ -59,6 +64,7 @@ impl ParamDecl {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct FuncDecl {
     id: String,
     kind: Kind,
@@ -85,6 +91,7 @@ impl FuncDecl {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Stat {
     AssignStat(AssignStat),
     IfStat(IfStat),
@@ -97,6 +104,7 @@ pub enum Stat {
     Break,
 }
 
+#[derive(PartialEq, Debug)]
 pub struct AssignStat {
     id: String,
     expr: Expr,
@@ -108,10 +116,11 @@ impl AssignStat {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct IfStat {
-    cond: Expr,
-    if_body: StatList,
-    else_body: Option<StatList>,
+    pub cond: Expr,
+    pub if_body: StatList,
+    pub else_body: Option<StatList>,
 }
 
 impl IfStat {
@@ -124,6 +133,7 @@ impl IfStat {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct WhileStat {
     cond: Expr,
     body: StatList,
@@ -135,6 +145,7 @@ impl WhileStat {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub struct ForStat {
     id: String,
     begin_expr: Expr,
@@ -153,14 +164,16 @@ impl ForStat {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum WriteStat {
     WriteLine(ExprList),
     Write(ExprList),
 }
 
+#[derive(PartialEq, Debug)]
 pub struct FuncCall {
-    id: String,
-    args: ExprList,
+    pub id: String,
+    pub args: ExprList,
 }
 
 impl FuncCall {
@@ -169,11 +182,13 @@ impl FuncCall {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Expr {
     Node(Box<Expr>, Operator, Box<Expr>),
     Factor(Factor),
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Factor {
     Id(String),
     UnaryOp(UnaryOp),
@@ -183,6 +198,7 @@ pub enum Factor {
     Const(Const),
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Const {
     IntConst(i32),
     RealConst(f64),
@@ -190,11 +206,13 @@ pub enum Const {
     BoolConst(bool),
 }
 
+#[derive(PartialEq, Debug)]
 pub enum UnaryOp {
     Negate(Box<Factor>),
     Minus(Box<Factor>),
 }
 
+#[derive(PartialEq, Debug)]
 pub struct CondExpr {
     cond: Box<Expr>,
     true_stat: Box<Expr>,
@@ -211,6 +229,7 @@ impl CondExpr {
     }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum CastExpr {
     Integer(Box<Expr>),
     Real(Box<Expr>),
