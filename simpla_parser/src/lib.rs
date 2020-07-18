@@ -106,7 +106,7 @@ mod tests {
     fn test_operator_precedence() {
         let code = r#"
             body
-                a = 5 + 6 * 7;
+                a = 5 + 6 * 7 * (8 + 9 * (10 + 11));
             end.
         "#;
 
