@@ -223,7 +223,11 @@ TypeDecl: syntax_tree::Kind = {
 Id: String = <s:r"[A-Za-z][A-Za-z_0-9]*"> => s.to_owned();
 IntConst: i32 = <s:r"[0-9]+"> => s.parse::<i32>().unwrap();
 RealConst: f64 = <s:r"[0-9]*\.[0-9]+"> => s.parse::<f64>().unwrap();
-StrConst: String = <s:r#""[^"\n]*""#> => s.to_owned();
+StrConst: String = <s:r#""[^"\n]*""#> => {
+    let len = s.len() - 1;
+    let s = &s[1..len];
+    s.to_owned()
+};
 
 // punctuation
 DotPunct = <".">;

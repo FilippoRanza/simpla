@@ -232,6 +232,120 @@ mod tests {
         assert_eq!(tree, correct);
     }
 
+    #[test]
+    fn test_function_declaration() {
+        let code = r#"
+            func do_stuff(a: integer) : void
+                i, j : integer;
+                c, d : string;
+            body
+                c = "while is a keyword";
+                d = "for = 45 is illegal in simpla";
+                for i = 0 to a do
+                    write(c);
+                    j = i;
+                    while j > 0 do
+                        if j / 2 > 5 then
+                            write(d);
+                        end;
+                        j = j - 1;
+                    end;
+                    writeln();
+                end;
+            end;
+
+            body
+                do_stuff(20);
+            end.
+        "#;
+        let tree = parse_correct_code(code);
+        let correct = Program::new(
+            vec![],
+            vec![FuncDecl::new(
+                "do_stuff".to_owned(),
+                vec![ParamDecl::new("a".to_owned(), Kind::Int)],
+                Kind::Void,
+                vec![
+                    VarDecl::new(vec!["i".to_owned(), "j".to_owned()], Kind::Int),
+                    VarDecl::new(vec!["c".to_owned(), "d".to_owned()], Kind::Str),
+                ],
+                vec![
+                    Stat::AssignStat(AssignStat::new(
+                        "c".to_owned(),
+                        Expr::Factor(Factor::Const(Const::StrConst(
+                            "while is a keyword".to_owned(),
+                        ))),
+                    )),
+                    Stat::AssignStat(AssignStat::new(
+                        "d".to_owned(),
+                        Expr::Factor(Factor::Const(Const::StrConst(
+                            "for = 45 is illegal in simpla".to_owned(),
+                        ))),
+                    )),
+                    Stat::ForStat(ForStat::new(
+                        "i".to_owned(),
+                        Expr::Factor(Factor::Const(Const::IntConst(0))),
+                        Expr::Factor(Factor::Id("a".to_owned())),
+                        vec![
+                            Stat::WriteStat(WriteStat::Write(vec![Expr::Factor(Factor::Id(
+                                "c".to_owned(),
+                            ))])),
+                            Stat::AssignStat(AssignStat::new(
+                                "j".to_owned(),
+                                Expr::Factor(Factor::Id("i".to_owned())),
+                            )),
+                            Stat::WhileStat(WhileStat::new(
+                                Expr::Node(
+                                    Box::new(Expr::Factor(Factor::Id("j".to_owned()))),
+                                    Operator::Greater,
+                                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(0)))),
+                                ),
+                                vec![
+                                    Stat::IfStat(IfStat::new(
+                                        Expr::Node(
+                                            Box::new(Expr::Node(
+                                                Box::new(Expr::Factor(Factor::Id("j".to_owned()))),
+                                                Operator::Div,
+                                                Box::new(Expr::Factor(Factor::Const(
+                                                    Const::IntConst(2),
+                                                ))),
+                                            )),
+                                            Operator::Greater,
+                                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(
+                                                5,
+                                            )))),
+                                        ),
+                                        vec![Stat::WriteStat(WriteStat::Write(vec![
+                                            Expr::Factor(Factor::Id("d".to_owned())),
+                                        ]))],
+                                        None,
+                                    )),
+                                    Stat::AssignStat(AssignStat::new(
+                                        "j".to_owned(),
+                                        Expr::Node(
+                                            Box::new(Expr::Factor(Factor::Id("j".to_owned()))),
+                                            Operator::Sub,
+                                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(
+                                                1,
+                                            )))),
+                                        ),
+                                    )),
+                                ],
+                            )),
+                            Stat::WriteStat(WriteStat::WriteLine(vec![])),
+                        ],
+                    )),
+                ],
+            )],
+            vec![Stat::FuncCall(FuncCall::new(
+                "do_stuff".to_owned(),
+                vec![Expr::Factor(Factor::Const(Const::IntConst(20)))],
+            ))],
+        );
+
+        assert_eq!(tree, correct);
+    }
+
     fn assign_keyword(word: &str) {
         let code = format!(
             r#"
