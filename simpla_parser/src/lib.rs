@@ -102,7 +102,6 @@ mod tests {
         assert_eq!(tree, correct);
     }
 
-
     #[test]
     fn test_operator_precedence() {
         let code = r#"
@@ -110,26 +109,68 @@ mod tests {
                 a = 5 + 6 * 7;
             end.
         "#;
-        
+
         let tree = parse_correct_code(code);
-        let result = Program::new(vec![], vec![], vec![
-            Stat::AssignStat(
-                AssignStat::new("a".to_owned(), Expr::Node(
+        let result = Program::new(
+            vec![],
+            vec![],
+            vec![Stat::AssignStat(AssignStat::new(
+                "a".to_owned(),
+                Expr::Node(
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(5)))),
                     Operator::Add,
-                    Box::new(
-                        Expr::Node(
-                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
-                            Operator::Mul,
-                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(7))))
-                        )
-                    )
-                ))
-            )
-        ]);
+                    Box::new(Expr::Node(
+                        Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
+                        Operator::Mul,
+                        Box::new(Expr::Factor(Factor::Const(Const::IntConst(7)))),
+                    )),
+                ),
+            ))],
+        );
 
         assert_eq!(tree, result);
+    }
 
+    #[test]
+    fn test_keywords() {
+        // ensure that keywords get the correct precedence over ids
+        let keywords = [
+            "if", "func", "body", "end", "break", "then", "else", "while", "for", "do", "to",
+            "return", "read", "write", "writeln", "and", "or", "not", "integer", "real", "string",
+            "boolean", "void", "true", "false",
+        ];
+        for kw in &keywords {
+            assign_keyword(kw);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Success with: a")]
+    fn test_assign_keyword() {
+        /*
+        this test ensures that assign_keyword produces a
+        correct code unless a simpla's keyword is given as
+        argument
+        */
+        assign_keyword("a");
+    }
+
+    fn assign_keyword(word: &str) {
+        let code = format!(
+            r#"
+            body
+                {} = 45;
+            end.
+        "#,
+            word
+        );
+
+        let parser = simpla::ProgramParser::new();
+        let result = parser.parse(&code);
+        match result {
+            Ok(_) => panic!("Success with: {}\nCode: {}", word, code),
+            Err(_) => {}
+        }
     }
 
     fn parse_correct_code(code: &str) -> syntax_tree::Program {
