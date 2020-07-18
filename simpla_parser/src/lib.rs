@@ -120,18 +120,16 @@ mod tests {
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(5)))),
                     Operator::Add,
                     Box::new(Expr::Node(
-                        Box::new(
-                            Expr::Node(
-                                Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
-                                Operator::Mul,
-                                Box::new(Expr::Factor(Factor::Const(Const::IntConst(7))))
-                            )
-                        ),
+                        Box::new(Expr::Node(
+                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
+                            Operator::Mul,
+                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(7)))),
+                        )),
                         Operator::Mul,
                         Box::new(Expr::Node(
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(8)))),
                             Operator::Add,
-                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(9))))
+                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(9)))),
                         )),
                     )),
                 ),
@@ -163,6 +161,75 @@ mod tests {
         argument
         */
         assign_keyword("a");
+    }
+
+    #[test]
+    fn test_useless_brackets() {
+        let code_a = r#"
+            body 
+                a = ((((b * next_number(45)))));
+            end.
+        "#;
+        let code_b = r#"
+            body
+                a = b * next_number(45);
+            end.
+        "#;
+
+        let tree_a = parse_correct_code(code_a);
+        let tree_b = parse_correct_code(code_b);
+
+        assert_eq!(tree_a, tree_b);
+    }
+
+    #[test]
+    fn test_ignore_comment() {
+        // this comment contains some illegal code
+
+        let code = r#"
+            body
+                #while = if ** end;
+                writeln("Hello, World!");
+            end.
+        "#;
+        parse_correct_code(code);
+    }
+
+    #[test]
+    fn test_type_cast() {
+        let code = r#"
+            body
+                a = 5.67;
+                b = integer(a);
+                c = function(b);
+            end.
+        "#;
+        let tree = parse_correct_code(code);
+        let correct = Program::new(
+            vec![],
+            vec![],
+            vec![
+                Stat::AssignStat(AssignStat::new(
+                    "a".to_owned(),
+                    Expr::Factor(Factor::Const(Const::RealConst(5.67))),
+                )),
+                Stat::AssignStat(AssignStat::new(
+                    "b".to_owned(),
+                    Expr::Factor(Factor::CastExpr(CastExpr::Integer(Box::new(Expr::Factor(
+                        Factor::Id("a".to_owned()),
+                    ))))),
+                )),
+                Stat::AssignStat(AssignStat::new(
+                    "c".to_owned(),
+                    Expr::Factor(Factor::FuncCall(FuncCall::new(
+                        "function".to_owned(),
+                        vec![Expr::Factor(Factor::Id("b".to_owned()))],
+                    ))),
+                )),
+            ],
+        );
+
+        assert_eq!(tree, correct);
     }
 
     fn assign_keyword(word: &str) {
