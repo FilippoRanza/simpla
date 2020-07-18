@@ -146,7 +146,12 @@ RelTerm: syntax_tree::Expr = {
 }
 
 LowTerm: syntax_tree::Expr = {
-    <l: LowTerm> <op: HighPrecOp> <r: Factor> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(syntax_tree::Expr::Factor(r))),
+    <l: LowTerm> <op: HighPrecOp> <r: HighPrecFactor> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <HighPrecFactor>
+}
+
+HighPrecFactor: syntax_tree::Expr = {
+    OpenBracketPunct <e: Expr> CloseBracketPunct => e,
     <f: Factor> => syntax_tree::Expr::Factor(<>)
 }
 

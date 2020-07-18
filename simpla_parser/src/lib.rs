@@ -106,7 +106,7 @@ mod tests {
     fn test_operator_precedence() {
         let code = r#"
             body
-                a = 5 + 6 * 7 * (8 + 9 * (10 + 11));
+                a = 5 + 6 * 7 * (8 + 9);
             end.
         "#;
 
@@ -120,9 +120,19 @@ mod tests {
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(5)))),
                     Operator::Add,
                     Box::new(Expr::Node(
-                        Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
+                        Box::new(
+                            Expr::Node(
+                                Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
+                                Operator::Mul,
+                                Box::new(Expr::Factor(Factor::Const(Const::IntConst(7))))
+                            )
+                        ),
                         Operator::Mul,
-                        Box::new(Expr::Factor(Factor::Const(Const::IntConst(7)))),
+                        Box::new(Expr::Node(
+                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(8)))),
+                            Operator::Add,
+                            Box::new(Expr::Factor(Factor::Const(Const::IntConst(9))))
+                        )),
                     )),
                 ),
             ))],
