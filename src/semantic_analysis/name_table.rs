@@ -7,7 +7,6 @@ fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
     GlobalVariableTable::new()
 }
 
-
 pub struct GlobalVariableTable<'a> {
     global_table: NameTable<'a, &'a syntax_tree::Kind>,
 }
@@ -36,12 +35,15 @@ impl<'a> GlobalVariableTable<'a> {
 
 pub struct FunctionTable<'a> {
     global_table: NameTable<'a, &'a syntax_tree::Kind>,
-    function_table : NameTable<'a, &'a syntax_tree::FuncDecl>
+    function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
 }
 
 impl<'a> FunctionTable<'a> {
     fn new(global_table: NameTable<'a, &'a syntax_tree::Kind>) -> Self {
-        Self { global_table , function_table: NameTable::new(Entry::Function)}
+        Self {
+            global_table,
+            function_table: NameTable::new(Entry::Function),
+        }
     }
 
     pub fn switch_to_local_table(self) -> LocalVariableTable<'a> {
@@ -67,7 +69,10 @@ pub struct LocalVariableTable<'a> {
 }
 
 impl<'a> LocalVariableTable<'a> {
-    fn new(global_table: NameTable<'a, &'a syntax_tree::Kind>, function_table: NameTable<'a, &'a syntax_tree::FuncDecl>) -> Self {
+    fn new(
+        global_table: NameTable<'a, &'a syntax_tree::Kind>,
+        function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
+    ) -> Self {
         Self {
             global_table,
             function_table,
@@ -98,18 +103,19 @@ enum Entry {
     Function,
 }
 
-
-struct NameTable<'a, T> 
-where T: 'a {
+struct NameTable<'a, T>
+where
+    T: 'a,
+{
     table: HashMap<&'a str, T>,
-    entry_kind: Entry
+    entry_kind: Entry,
 }
 
 impl<'a, T> NameTable<'a, T> {
     fn new(entry_kind: Entry) -> Self {
         Self {
             table: HashMap::new(),
-            entry_kind
+            entry_kind,
         }
     }
 
@@ -149,7 +155,6 @@ impl<'a, T> NameTable<'a, T> {
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
@@ -175,44 +180,79 @@ mod test {
 
         // state 1: global variables
         let mut table = name_table_factory();
-        table.insert_variable(global_variable, &syntax_tree::Kind::Int).unwrap();
-        table.insert_variable(other_global_variable, &syntax_tree::Kind::Real).unwrap();
+        table
+            .insert_variable(global_variable, &syntax_tree::Kind::Int)
+            .unwrap();
+        table
+            .insert_variable(other_global_variable, &syntax_tree::Kind::Real)
+            .unwrap();
 
         let err = table.insert_variable(global_variable, &syntax_tree::Kind::Bool);
-        check_status(err, global_variable, Ridefinition::Variable, Ridefinition::Variable);
+        check_status(
+            err,
+            global_variable,
+            Ridefinition::Variable,
+            Ridefinition::Variable,
+        );
 
         // state 2: functions
         let mut table = table.switch_to_function_table();
         table.insert_function(function_name, &func_decl).unwrap();
 
         let err = table.insert_function(global_variable, &func_decl);
-        check_status(err, global_variable, Ridefinition::Variable, Ridefinition::Function);
-        
-        table.insert_function(other_function_name, &func_decl).unwrap();
-        
+        check_status(
+            err,
+            global_variable,
+            Ridefinition::Variable,
+            Ridefinition::Function,
+        );
+
+        table
+            .insert_function(other_function_name, &func_decl)
+            .unwrap();
+
         let err = table.insert_function(function_name, &func_decl);
-        check_status(err, function_name, Ridefinition::Function, Ridefinition::Function);
+        check_status(
+            err,
+            function_name,
+            Ridefinition::Function,
+            Ridefinition::Function,
+        );
 
         // state 3: local functions (formal parameters and function local variables)
         let mut table = table.switch_to_local_table();
-        table.insert_variable(local_variable, &syntax_tree::Kind::Real).unwrap();
+        table
+            .insert_variable(local_variable, &syntax_tree::Kind::Real)
+            .unwrap();
 
         let err = table.insert_variable(global_variable, &syntax_tree::Kind::Str);
-        check_status(err, global_variable, Ridefinition::Variable, Ridefinition::Variable);
+        check_status(
+            err,
+            global_variable,
+            Ridefinition::Variable,
+            Ridefinition::Variable,
+        );
 
         let err = table.insert_variable(function_name, &syntax_tree::Kind::Bool);
-        check_status(err, function_name, Ridefinition::Function, Ridefinition::Variable);
-        
-        table.insert_variable(other_local_variable, &syntax_tree::Kind::Int).unwrap();
+        check_status(
+            err,
+            function_name,
+            Ridefinition::Function,
+            Ridefinition::Variable,
+        );
+
+        table
+            .insert_variable(other_local_variable, &syntax_tree::Kind::Int)
+            .unwrap();
 
         let err = table.insert_variable(other_local_variable, &syntax_tree::Kind::Int);
-        check_status(err, other_local_variable, Ridefinition::Variable, Ridefinition::Variable);
-
-
+        check_status(
+            err,
+            other_local_variable,
+            Ridefinition::Variable,
+            Ridefinition::Variable,
+        );
     }
-
-
-
 
     fn check_status(
         stat: Result<(), SemanticError>,
