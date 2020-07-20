@@ -7,6 +7,14 @@ pub fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
     GlobalVariableTable::new()
 }
 
+pub trait VariableTable<'a> {
+    fn insert_variable(
+        &mut self,
+        name: &'a str,
+        kind: &'a syntax_tree::Kind,
+    ) -> Result<(), SemanticError<'a>>;
+}
+
 pub struct GlobalVariableTable<'a> {
     global_table: NameTable<'a, &'a syntax_tree::Kind>,
 }
@@ -21,12 +29,14 @@ impl<'a> GlobalVariableTable<'a> {
     pub fn switch_to_function_table(self) -> FunctionTable<'a> {
         FunctionTable::new(self.global_table)
     }
+}
 
-    pub fn insert_variable(
+impl<'a> VariableTable<'a> for GlobalVariableTable<'a> {
+    fn insert_variable(
         &mut self,
         name: &'a str,
         kind: &'a syntax_tree::Kind,
-    ) -> Result<(), SemanticError> {
+    ) -> Result<(), SemanticError<'a>> {
         self.global_table.check_collision(name, Entry::Variable)?;
         self.global_table.insert(name, kind);
         Ok(())
@@ -54,7 +64,7 @@ impl<'a> FunctionTable<'a> {
         &mut self,
         name: &'a str,
         func_decl: &'a syntax_tree::FuncDecl,
-    ) -> Result<(), SemanticError> {
+    ) -> Result<(), SemanticError<'a>> {
         self.global_table.check_collision(name, Entry::Function)?;
         self.function_table.check_collision(name, Entry::Function)?;
         self.function_table.insert(name, func_decl);
@@ -84,12 +94,14 @@ impl<'a> LocalVariableTable<'a> {
         self.local_table.clear();
         self
     }
+}
 
-    pub fn insert_variable(
+impl<'a> VariableTable<'a> for LocalVariableTable<'a> {
+    fn insert_variable(
         &mut self,
         name: &'a str,
         kind: &'a syntax_tree::Kind,
-    ) -> Result<(), SemanticError> {
+    ) -> Result<(), SemanticError<'a>> {
         self.global_table.check_collision(name, Entry::Variable)?;
         self.function_table.check_collision(name, Entry::Variable)?;
         self.local_table.check_collision(name, Entry::Variable)?;
@@ -127,7 +139,7 @@ impl<'a, T> NameTable<'a, T> {
         self.table.insert(name, entry);
     }
 
-    fn check_collision(&self, name: &str, new_entry: Entry) -> Result<(), SemanticError> {
+    fn check_collision(&self, name: &str, new_entry: Entry) -> Result<(), SemanticError<'a>> {
         if let Some(_) = self.table.get(name) {
             let (original, new) = match (&self.entry_kind, new_entry) {
                 (Entry::Function, Entry::Function) => {

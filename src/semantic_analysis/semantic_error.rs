@@ -1,10 +1,14 @@
 #[derive(Debug)]
-pub enum SemanticError {
+pub enum SemanticError<'a> {
     NameRidefinition {
         name: String,
         original: Ridefinition,
         new: Ridefinition,
     },
+    VoidVariableDeclaration {
+        names: &'a [String],
+    },
+
     InnerError,
 }
 
