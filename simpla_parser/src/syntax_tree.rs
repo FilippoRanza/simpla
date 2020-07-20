@@ -15,7 +15,7 @@ impl Program {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Kind {
     Int,
     Real,
