@@ -42,8 +42,8 @@ pub enum Operator {
 
 #[derive(PartialEq, Debug)]
 pub struct VarDecl {
-    id_list: IdList,
-    kind: Kind,
+    pub id_list: IdList,
+    pub kind: Kind,
 }
 
 impl VarDecl {
@@ -66,11 +66,11 @@ impl ParamDecl {
 
 #[derive(PartialEq, Debug)]
 pub struct FuncDecl {
-    id: String,
-    kind: Kind,
-    params: ParamList,
-    vars: VarDeclList,
-    body: StatList,
+    pub id: String,
+    pub kind: Kind,
+    pub params: ParamList,
+    pub vars: VarDeclList,
+    pub body: StatList,
 }
 
 impl FuncDecl {

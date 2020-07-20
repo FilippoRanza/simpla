@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::semantic_error::{Ridefinition, SemanticError};
 use simpla_parser::syntax_tree;
 
-fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
+pub fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
     GlobalVariableTable::new()
 }
 
