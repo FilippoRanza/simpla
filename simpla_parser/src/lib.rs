@@ -126,11 +126,11 @@ mod tests {
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(7)))),
                         )),
                         Operator::Mul,
-                        Box::new(Expr::Node(
+                        Box::new(Expr::Factor(Factor::HighPrecedence(Box::new(Expr::Node(
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(8)))),
                             Operator::Add,
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(9)))),
-                        )),
+                        ))))),
                     )),
                 ),
             ))],
@@ -172,7 +172,7 @@ mod tests {
         "#;
         let code_b = r#"
             body
-                a = b * next_number(45);
+                a = (b * next_number(45));
             end.
         "#;
 

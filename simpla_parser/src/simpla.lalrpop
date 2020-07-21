@@ -146,14 +146,10 @@ RelTerm: syntax_tree::Expr = {
 }
 
 LowTerm: syntax_tree::Expr = {
-    <l: LowTerm> <op: HighPrecOp> <r: HighPrecFactor> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
-    <HighPrecFactor>
+    <l: LowTerm> <op: HighPrecOp> <r: Factor> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(syntax_tree::Expr::Factor(r))),
+    <Factor> => syntax_tree::Expr::Factor(<>)
 }
 
-HighPrecFactor: syntax_tree::Expr = {
-    OpenBracketPunct <e: Expr> CloseBracketPunct => e,
-    <f: Factor> => syntax_tree::Expr::Factor(<>)
-}
 
 Factor: syntax_tree::Factor = {
     <id: Id> => syntax_tree::Factor::Id(id),
@@ -161,7 +157,13 @@ Factor: syntax_tree::Factor = {
     <cond: CondExpr> => syntax_tree::Factor::CondExpr(<>),
     <cast: CastExpr> => syntax_tree::Factor::CastExpr(<>),
     <fcall: FuncCall> => syntax_tree::Factor::FuncCall(<>),
-    <ConstFactor> => syntax_tree::Factor::Const(<>)
+    <ConstFactor> => syntax_tree::Factor::Const(<>),
+    OpenBracketPunct <e: Expr> CloseBracketPunct => {
+        match e {
+            syntax_tree::Expr::Factor(syntax_tree::Factor::HighPrecedence(e)) => syntax_tree::Factor::HighPrecedence(e),
+            other => syntax_tree::Factor::HighPrecedence(Box::new(other))
+        }
+    },
 }
 
 UnaryOp: syntax_tree::UnaryOp = {
