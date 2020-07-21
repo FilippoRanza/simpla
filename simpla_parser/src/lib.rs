@@ -369,6 +369,19 @@ mod tests {
         assert_eq!(tree, correct);
     }
 
+
+    #[test]
+    fn test_unary_operators() {
+        let code = r#"
+            body
+                a = not b;
+                c = -(5 * 6);
+            end.
+        "#;
+
+        let tree = parse_correct_code(code);
+    }
+
     fn assign_keyword(word: &str) {
         let code = format!(
             r#"
