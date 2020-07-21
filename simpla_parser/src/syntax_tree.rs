@@ -24,7 +24,7 @@ pub enum Kind {
     Void,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Operator {
     Equal,
     NotEqual,
@@ -54,8 +54,8 @@ impl VarDecl {
 
 #[derive(PartialEq, Debug)]
 pub struct ParamDecl {
-    id: String,
-    kind: Kind,
+    pub id: String,
+    pub kind: Kind,
 }
 
 impl ParamDecl {
@@ -215,9 +215,9 @@ pub enum UnaryOp {
 
 #[derive(PartialEq, Debug)]
 pub struct CondExpr {
-    cond: Box<Expr>,
-    true_stat: Box<Expr>,
-    false_stat: Box<Expr>,
+    pub cond: Box<Expr>,
+    pub true_stat: Box<Expr>,
+    pub false_stat: Box<Expr>,
 }
 
 impl CondExpr {

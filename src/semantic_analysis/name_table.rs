@@ -94,6 +94,24 @@ impl<'a> LocalVariableTable<'a> {
         self.local_table.clear();
         self
     }
+
+    pub fn get_variable(&self, name: &'a str) -> Result<&syntax_tree::Kind, SemanticError<'a>> {
+        if let Some(output) = self.local_table.get(name) {
+            Ok(output)
+        } else if let Some(output) = self.global_table.get(name) {
+            Ok(output)
+        } else {
+            Err(SemanticError::UnknownVariable(name))
+        }
+    }
+
+    pub fn get_function(&self, name: &'a str) -> Result<&syntax_tree::FuncDecl, SemanticError<'a>> {
+        if let Some(output) = self.function_table.get(name) {
+            Ok(output)
+        } else {
+            Err(SemanticError::UnknownFunction(name))
+        }
+    }
 }
 
 impl<'a> VariableTable<'a> for LocalVariableTable<'a> {
@@ -129,6 +147,10 @@ impl<'a, T> NameTable<'a, T> {
             table: HashMap::new(),
             entry_kind,
         }
+    }
+
+    fn get(&self, name: &str) -> Option<&T> {
+        self.table.get(name)
     }
 
     fn clear(&mut self) {
