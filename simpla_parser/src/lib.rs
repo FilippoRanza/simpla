@@ -369,7 +369,6 @@ mod tests {
         assert_eq!(tree, correct);
     }
 
-
     #[test]
     fn test_unary_operators() {
         let code = r#"
@@ -380,6 +379,49 @@ mod tests {
         "#;
 
         let tree = parse_correct_code(code);
+    }
+
+    #[test]
+    fn test_brackets_removal() {
+        /*
+         like test_useless_brackets but checks
+         the result of the parsing
+        */
+        let code = r#"
+            body
+                a = (b * (c + d));
+            end.
+        "#;
+
+        let tree = parse_correct_code(code);
+        let correct = Program::new(
+            vec![],
+            vec![],
+            vec![Stat::AssignStat(AssignStat::new(
+                "a".to_owned(),
+                Expr::Factor(Factor::HighPrecedence(Box::new(Expr::Node(
+                    Box::new(Expr::Factor(Factor::Id("b".to_owned()))),
+                    Operator::Mul,
+                    Box::new(Expr::Factor(Factor::HighPrecedence(Box::new(Expr::Node(
+                        Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
+                        Operator::Add,
+                        Box::new(Expr::Factor(Factor::Id("d".to_owned()))),
+                    ))))),
+                )))),
+            ))],
+        );
+        assert_eq!(correct, tree);
+
+        
+        let code = r"#
+            body
+                a = (((((b * (((((c + d))))))))));
+            end.
+        #";
+
+        let tree = parse_correct_code(code);
+        assert_eq!(correct, tree);
+
     }
 
     fn assign_keyword(word: &str) {

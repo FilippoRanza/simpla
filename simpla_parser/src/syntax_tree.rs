@@ -196,7 +196,7 @@ pub enum Factor {
     CastExpr(CastExpr),
     FuncCall(FuncCall),
     Const(Const),
-    HighPrecedence(Box<Expr>)
+    HighPrecedence(Box<Expr>),
 }
 
 #[derive(PartialEq, Debug)]
