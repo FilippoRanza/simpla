@@ -412,7 +412,6 @@ mod tests {
         );
         assert_eq!(correct, tree);
 
-        
         let code = r"#
             body
                 a = (((((b * (((((c + d))))))))));
@@ -421,7 +420,6 @@ mod tests {
 
         let tree = parse_correct_code(code);
         assert_eq!(correct, tree);
-
     }
 
     fn assign_keyword(word: &str) {
