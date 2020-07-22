@@ -1,6 +1,6 @@
 use simpla_parser::syntax_tree;
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum SemanticError<'a> {
     NameRidefinition {
         name: String,
@@ -37,7 +37,7 @@ pub enum Ridefinition {
     Variable,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct MismatchedTypes {
     pub left: syntax_tree::Kind,
     pub right: syntax_tree::Kind,
@@ -49,7 +49,7 @@ impl MismatchedTypes {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct IncoherentOperation {
     pub var_kind: syntax_tree::Kind,
     pub operator: syntax_tree::Operator,
@@ -61,20 +61,20 @@ impl IncoherentOperation {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum CastError {
     ToInt(syntax_tree::Kind),
     ToReal(syntax_tree::Kind),
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum NonBooleanCondition {
     IfStat(syntax_tree::Kind),
     WhileStat(syntax_tree::Kind),
     CondStat(syntax_tree::Kind),
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub enum MismatchedUnary {
     Logic(syntax_tree::Kind),
     Numeric(syntax_tree::Kind),

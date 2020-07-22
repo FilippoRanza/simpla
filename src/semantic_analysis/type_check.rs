@@ -200,12 +200,155 @@ fn check_function_call<'a>(
 #[cfg(test)]
 mod test {
 
-    use super::super::name_table::name_table_factory;
-    use super::syntax_tree::{Kind, Operator};
+    use super::super::name_table::{name_table_factory, VariableTable};
+    use super::syntax_tree::*;
     use super::*;
 
     #[test]
-    fn test_check_cast() {}
+    fn test_check_function_call() {
+        let mut table = name_table_factory();
+        let var_name = "value";
+        table.insert_variable(var_name, &Kind::Int).unwrap();
+
+        let func_name_a = "test";
+        let func_decl_a = FuncDecl::new(func_name_a.to_owned(), vec![], Kind::Int, vec![], vec![]);
+
+        let func_name_b = "do_stuff";
+        let func_decl_b = FuncDecl::new(
+            func_name_b.to_owned(),
+            vec![ParamDecl::new("arg".to_owned(), Kind::Str)],
+            Kind::Real,
+            vec![],
+            vec![],
+        );
+
+        let mut table = table.switch_to_function_table();
+        table.insert_function(func_name_a, &func_decl_a).unwrap();
+        table.insert_function(func_name_b, &func_decl_b).unwrap();
+
+        let table = table.switch_to_local_table();
+
+        let func_call = FuncCall::new(func_name_a.to_owned(), vec![]);
+
+        let stat = check_function_call(&func_call, &table).unwrap();
+        assert_eq!(stat, Kind::Int);
+
+        let func_call = FuncCall::new(
+            func_name_a.to_owned(),
+            vec![Expr::Factor(Factor::Id(var_name.to_owned()))],
+        );
+        let stat = check_function_call(&func_call, &table);
+        check_error_status(
+            stat,
+            SemanticError::ArgumentCountError {
+                func_name: func_name_a,
+                correct: 0,
+                given: 1,
+            },
+        );
+
+        let func_call = FuncCall::new(
+            func_name_b.to_owned(),
+            vec![Expr::Factor(Factor::Id(var_name.to_owned()))],
+        );
+        let stat = check_function_call(&func_call, &table);
+        check_error_status(
+            stat,
+            SemanticError::MismatchedArgumentType {
+                func_name: func_name_b,
+                correct: Kind::Str,
+                given: Kind::Int,
+            },
+        );
+    }
+
+    #[test]
+    fn test_check_cast() {
+        let int_var_name = "int_var";
+        let float_var_name = "float_var";
+
+        let mut table = name_table_factory();
+        table.insert_variable(int_var_name, &Kind::Int).unwrap();
+        table.insert_variable(float_var_name, &Kind::Real).unwrap();
+
+        let table = table.switch_to_function_table().switch_to_local_table();
+
+        let correct_real_cast =
+            CastExpr::Real(Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))));
+        let correct_int_cast = CastExpr::Integer(Box::new(Expr::Factor(Factor::Id(
+            float_var_name.to_owned(),
+        ))));
+
+        assert_eq!(check_cast(&correct_real_cast, &table), Ok(Kind::Real));
+        assert_eq!(check_cast(&correct_int_cast, &table), Ok(Kind::Int));
+
+        let wrong_int_cast =
+            CastExpr::Integer(Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))));
+        let wrong_real_cast = CastExpr::Real(Box::new(Expr::Factor(Factor::Id(
+            float_var_name.to_owned(),
+        ))));
+
+        assert_eq!(
+            check_cast(&wrong_int_cast, &table),
+            Err(SemanticError::CastError(CastError::ToInt(Kind::Int)))
+        );
+        assert_eq!(
+            check_cast(&wrong_real_cast, &table),
+            Err(SemanticError::CastError(CastError::ToReal(Kind::Real)))
+        );
+    }
+
+    #[test]
+    fn test_unary_operator() {
+        let table = name_table_factory()
+            .switch_to_function_table()
+            .switch_to_local_table();
+
+        let correct_numeric_expr = Box::new(Expr::Node(
+            Box::new(Expr::Factor(Factor::Const(Const::IntConst(4)))),
+            Operator::Add,
+            Box::new(Expr::Factor(Factor::Const(Const::IntConst(12)))),
+        ));
+        let correct_boolean_expr = Box::new(Expr::Node(
+            Box::new(Expr::Factor(Factor::Const(Const::BoolConst(false)))),
+            Operator::Or,
+            Box::new(Expr::Factor(Factor::Const(Const::BoolConst(true)))),
+        ));
+
+        let correct_numeric_unary =
+            UnaryOp::Minus(Box::new(Factor::HighPrecedence(correct_numeric_expr)));
+        let correct_boolean_unary =
+            UnaryOp::Negate(Box::new(Factor::HighPrecedence(correct_boolean_expr)));
+
+        assert_eq!(
+            check_unary_operator(&correct_numeric_unary, &table),
+            Ok(Kind::Int)
+        );
+        assert_eq!(
+            check_unary_operator(&correct_boolean_unary, &table),
+            Ok(Kind::Bool)
+        );
+
+        let correct_numeric_expr = extract_content(correct_numeric_unary);
+        let correct_boolean_expr = extract_content(correct_boolean_unary);
+
+        let wrong_numertic_unary = UnaryOp::Minus(correct_boolean_expr);
+        let wrong_boolean_unary = UnaryOp::Negate(correct_numeric_expr);
+
+        assert_eq!(
+            check_unary_operator(&wrong_numertic_unary, &table),
+            Err(SemanticError::MismatchedUnary(MismatchedUnary::Numeric(
+                Kind::Bool
+            )))
+        );
+
+        assert_eq!(
+            check_unary_operator(&wrong_boolean_unary, &table),
+            Err(SemanticError::MismatchedUnary(MismatchedUnary::Logic(
+                Kind::Int
+            )))
+        );
+    }
 
     #[test]
     fn test_coherent_operation() {
@@ -245,6 +388,13 @@ mod test {
         run_mismatched_types_test(&Kind::Int, &Operator::Add, &Kind::Real);
     }
 
+    fn check_error_status(res: Result<Kind, SemanticError>, expected: SemanticError) {
+        match res {
+            Ok(_) => panic!("{:?} is not an error"),
+            Err(err) => assert_eq!(err, expected),
+        }
+    }
+
     fn run_correct_coherent_test(left: &Kind, op: &Operator, right: &Kind) {
         let stat = coherent_operation(left.clone(), op, right.clone());
         match stat {
@@ -281,6 +431,13 @@ mod test {
                 },
                 _ => panic!("This test[{:?}, {:?}, {:?}] generates an error: {:?}.\nShould Generate a MistmatchedOperationTypes", left, op, right, err)
             }
+        }
+    }
+
+    fn extract_content(unary: UnaryOp) -> Box<Factor> {
+        match unary {
+            UnaryOp::Minus(out) => out,
+            UnaryOp::Negate(out) => out,
         }
     }
 }
