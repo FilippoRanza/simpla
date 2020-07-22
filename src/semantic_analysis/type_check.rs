@@ -22,6 +22,7 @@ pub fn type_check<'a>(
 
 enum OperatorKind {
     Numeric,
+    Relational,
     Logic,
 }
 
@@ -29,7 +30,11 @@ impl OperatorKind {
     fn from_operator(op: &syntax_tree::Operator) -> Self {
         match op {
             syntax_tree::Operator::And | syntax_tree::Operator::Or => Self::Logic,
-            _ => Self::Numeric,
+            syntax_tree::Operator::Add
+            | syntax_tree::Operator::Sub
+            | syntax_tree::Operator::Mul
+            | syntax_tree::Operator::Div => Self::Numeric,
+            _ => Self::Relational,
         }
     }
 }
@@ -51,6 +56,13 @@ fn coherent_operation<'a>(
             },
             OperatorKind::Numeric => match left {
                 syntax_tree::Kind::Int | syntax_tree::Kind::Real => Ok(left),
+                _ => {
+                    let err = IncoherentOperation::new(left, op.clone());
+                    Err(SemanticError::IncoherentOperation(err))
+                }
+            },
+            OperatorKind::Relational => match left {
+                syntax_tree::Kind::Int | syntax_tree::Kind::Real => Ok(syntax_tree::Kind::Bool),
                 _ => {
                     let err = IncoherentOperation::new(left, op.clone());
                     Err(SemanticError::IncoherentOperation(err))
@@ -351,12 +363,74 @@ mod test {
     }
 
     #[test]
+    fn test_conditional_expression() {
+        let mut table = name_table_factory();
+        let int_var_name = "int_var";
+        let real_var_name = "real_var";
+
+        table.insert_variable(int_var_name, &Kind::Int).unwrap();
+        table.insert_variable(real_var_name, &Kind::Real).unwrap();
+
+        let mut table = table.switch_to_function_table();
+
+        let str_func_name = "str_function";
+        let str_func = FuncDecl::new(
+            str_func_name.to_owned(),
+            vec![ParamDecl::new("n".to_owned(), Kind::Int)],
+            Kind::Str,
+            vec![],
+            vec![],
+        );
+
+        let void_func_name = "void_function";
+        let void_func = FuncDecl::new(
+            void_func_name.to_owned(),
+            vec![],
+            Kind::Void,
+            vec![],
+            vec![],
+        );
+
+        table.insert_function(str_func_name, &str_func).unwrap();
+        table.insert_function(void_func_name, &void_func).unwrap();
+
+        let correct_cond = CondExpr::new(
+            Expr::Node(
+                Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
+                Operator::Greater,
+                Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
+            ),
+            Expr::Factor(Factor::FuncCall(FuncCall::new(
+                str_func_name.to_owned(),
+                vec![Expr::Node(
+                    Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+                    Operator::Mul,
+                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
+                )],
+            ))),
+            Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+        );
+
+        let table = table.switch_to_local_table();
+
+        assert_eq!(
+            check_conditional_expression(&correct_cond, &table),
+            Ok(Kind::Str)
+        );
+    }
+
+    #[test]
     fn test_coherent_operation() {
+        for op in &[Operator::Add, Operator::Sub, Operator::Mul, Operator::Div] {
+            for kind in &[Kind::Real, Kind::Int] {
+                run_correct_coherent_test(kind, op, kind, kind);
+            }
+            for kind in &[Kind::Bool, Kind::Str] {
+                run_inchoerent_operation(kind, op, kind)
+            }
+        }
+
         for op in &[
-            Operator::Add,
-            Operator::Sub,
-            Operator::Mul,
-            Operator::Div,
             Operator::Equal,
             Operator::NotEqual,
             Operator::Less,
@@ -365,15 +439,14 @@ mod test {
             Operator::GreaterEqual,
         ] {
             for kind in &[Kind::Real, Kind::Int] {
-                run_correct_coherent_test(kind, op, kind);
+                run_correct_coherent_test(kind, op, kind, &Kind::Bool);
             }
-            for kind in &[Kind::Bool, Kind::Str] {
-                run_inchoerent_operation(kind, op, kind)
-            }
+
+            run_inchoerent_operation(&Kind::Bool, op, &Kind::Bool);
         }
 
         for op in &[Operator::And, Operator::Or] {
-            run_correct_coherent_test(&Kind::Bool, op, &Kind::Bool);
+            run_correct_coherent_test(&Kind::Bool, op, &Kind::Bool, &Kind::Bool);
             for kind in &[Kind::Int, Kind::Real, Kind::Str] {
                 run_inchoerent_operation(kind, op, kind);
             }
@@ -395,10 +468,10 @@ mod test {
         }
     }
 
-    fn run_correct_coherent_test(left: &Kind, op: &Operator, right: &Kind) {
+    fn run_correct_coherent_test(left: &Kind, op: &Operator, right: &Kind, expected: &Kind) {
         let stat = coherent_operation(left.clone(), op, right.clone());
         match stat {
-            Ok(_) => {}
+            Ok(kind) => assert_eq!(&kind, expected),
             Err(err) => panic!(
                 "This test[{:?}, {:?}, {:?}] generates an error: {:?}",
                 left, op, right, err
