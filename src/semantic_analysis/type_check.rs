@@ -417,6 +417,54 @@ mod test {
             check_conditional_expression(&correct_cond, &table),
             Ok(Kind::Str)
         );
+
+        let mismatched_cond = CondExpr::new(
+            Expr::Node(
+                Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
+                Operator::Greater,
+                Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
+            ),
+            Expr::Factor(Factor::FuncCall(FuncCall::new(
+                str_func_name.to_owned(),
+                vec![Expr::Node(
+                    Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+                    Operator::Mul,
+                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
+                )],
+            ))),
+            Expr::Factor(Factor::Const(Const::IntConst(41))),
+        );
+
+        assert_eq!(
+            check_conditional_expression(&mismatched_cond, &table),
+            Err(SemanticError::MismatchedConditionalExpression(
+                MismatchedTypes::new(Kind::Str, Kind::Int)
+            ))
+        );
+
+        let non_bool_cond = CondExpr::new(
+            Expr::Node(
+                Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
+                Operator::Add,
+                Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
+            ),
+            Expr::Factor(Factor::FuncCall(FuncCall::new(
+                str_func_name.to_owned(),
+                vec![Expr::Node(
+                    Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+                    Operator::Mul,
+                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
+                )],
+            ))),
+            Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+        );
+
+        assert_eq!(
+            check_conditional_expression(&non_bool_cond, &table),
+            Err(SemanticError::NonBooleanCondition(
+                NonBooleanCondition::CondStat(Kind::Real)
+            ))
+        )
     }
 
     #[test]
