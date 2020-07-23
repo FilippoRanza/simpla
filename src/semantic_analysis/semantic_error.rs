@@ -28,6 +28,7 @@ pub enum SemanticError<'a> {
         correct: syntax_tree::Kind,
         given: syntax_tree::Kind,
     },
+    MismatchedAssignment(MismatchedAssignment<'a>),
     InnerError,
 }
 
@@ -78,4 +79,21 @@ pub enum NonBooleanCondition {
 pub enum MismatchedUnary {
     Logic(syntax_tree::Kind),
     Numeric(syntax_tree::Kind),
+}
+
+#[derive(PartialEq, Debug)]
+pub struct MismatchedAssignment<'a> {
+    pub name: &'a str,
+    pub correct: syntax_tree::Kind,
+    pub given: syntax_tree::Kind,
+}
+
+impl<'a> MismatchedAssignment<'a> {
+    pub fn new(name: &'a str, correct: syntax_tree::Kind, given: syntax_tree::Kind) -> Self {
+        Self {
+            name,
+            correct,
+            given,
+        }
+    }
 }

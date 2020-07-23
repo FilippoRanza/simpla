@@ -106,8 +106,8 @@ pub enum Stat {
 
 #[derive(PartialEq, Debug)]
 pub struct AssignStat {
-    id: String,
-    expr: Expr,
+    pub id: String,
+    pub expr: Expr,
 }
 
 impl AssignStat {

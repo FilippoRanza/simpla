@@ -1,6 +1,7 @@
 mod name_table;
 mod semantic_check;
 mod semantic_error;
+mod stat_check;
 mod type_check;
 mod variable_check;
 
