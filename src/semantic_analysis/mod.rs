@@ -1,3 +1,4 @@
+mod body_check;
 mod name_table;
 mod semantic_check;
 mod semantic_error;

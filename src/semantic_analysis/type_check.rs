@@ -1,13 +1,21 @@
-use super::name_table::LookupTable;
+use super::name_table::LocalVariableTable;
 use super::semantic_error::{
     CastError, IncoherentOperation, MismatchedTypes, MismatchedUnary, NonBooleanCondition,
     SemanticError,
 };
 use simpla_parser::syntax_tree;
 
+pub fn function_call_check<'a>(
+    func_call: &'a syntax_tree::FuncCall,
+    table: &'a LocalVariableTable<'a>,
+) -> Result<(), SemanticError<'a>> {
+    check_function_call(func_call, table)?;
+    Ok(())
+}
+
 pub fn type_check<'a>(
     expr: &'a syntax_tree::Expr,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match expr {
         syntax_tree::Expr::Node(left, op, right) => {
@@ -77,7 +85,7 @@ fn coherent_operation<'a>(
 
 fn check_factor<'a>(
     fact: &'a syntax_tree::Factor,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match fact {
         syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table),
@@ -92,7 +100,7 @@ fn check_factor<'a>(
 
 fn check_cast<'a>(
     cast: &'a syntax_tree::CastExpr,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match cast {
         syntax_tree::CastExpr::Integer(expr) => {
@@ -118,7 +126,7 @@ fn check_cast<'a>(
 
 fn check_conditional_expression<'a>(
     cond_expr: &'a syntax_tree::CondExpr,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     let cond_kind = type_check(&cond_expr.cond, table)?;
     if cond_kind == syntax_tree::Kind::Bool {
@@ -147,7 +155,7 @@ fn check_const<'a>(value: &'a syntax_tree::Const) -> syntax_tree::Kind {
 
 fn check_id<'a>(
     name: &'a str,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match table.get_variable(name) {
         Ok(k) => Ok(k.clone()),
@@ -157,7 +165,7 @@ fn check_id<'a>(
 
 fn check_unary_operator<'a>(
     unary: &'a syntax_tree::UnaryOp,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match unary {
         syntax_tree::UnaryOp::Minus(fact) => {
@@ -183,7 +191,7 @@ fn check_unary_operator<'a>(
 
 fn check_function_call<'a>(
     fcall: &'a syntax_tree::FuncCall,
-    table: &'a LookupTable,
+    table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     let func_proto = table.get_function(&fcall.id)?;
     if func_proto.params.len() == fcall.args.len() {
@@ -238,7 +246,7 @@ mod test {
         table.insert_function(func_name_a, &func_decl_a).unwrap();
         table.insert_function(func_name_b, &func_decl_b).unwrap();
 
-        let table = table.switch_to_local_table().switch_to_lookup_table();
+        let table = table.switch_to_local_table();
 
         let func_call = FuncCall::new(func_name_a.to_owned(), vec![]);
 
@@ -283,7 +291,7 @@ mod test {
         table.insert_variable(int_var_name, &Kind::Int).unwrap();
         table.insert_variable(float_var_name, &Kind::Real).unwrap();
 
-        let table = table.switch_to_function_table().switch_to_local_table().switch_to_lookup_table();
+        let table = table.switch_to_function_table().switch_to_local_table();
 
         let correct_real_cast =
             CastExpr::Real(Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))));
@@ -314,7 +322,7 @@ mod test {
     fn test_unary_operator() {
         let table = name_table_factory()
             .switch_to_function_table()
-            .switch_to_local_table().switch_to_lookup_table();
+            .switch_to_local_table();
 
         let correct_numeric_expr = Box::new(Expr::Node(
             Box::new(Expr::Factor(Factor::Const(Const::IntConst(4)))),
@@ -411,7 +419,7 @@ mod test {
             Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
         );
 
-        let table = table.switch_to_local_table().switch_to_lookup_table();
+        let table = table.switch_to_local_table();
 
         assert_eq!(
             check_conditional_expression(&correct_cond, &table),

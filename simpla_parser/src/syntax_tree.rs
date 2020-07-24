@@ -135,8 +135,8 @@ impl IfStat {
 
 #[derive(PartialEq, Debug)]
 pub struct WhileStat {
-    cond: Expr,
-    body: StatList,
+    pub cond: Expr,
+    pub body: StatList,
 }
 
 impl WhileStat {
@@ -147,10 +147,10 @@ impl WhileStat {
 
 #[derive(PartialEq, Debug)]
 pub struct ForStat {
-    id: String,
-    begin_expr: Expr,
-    end_expr: Expr,
-    body: StatList,
+    pub id: String,
+    pub begin_expr: Expr,
+    pub end_expr: Expr,
+    pub body: StatList,
 }
 
 impl ForStat {

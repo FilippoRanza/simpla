@@ -109,44 +109,6 @@ impl<'a> LocalVariableTable<'a> {
         self
     }
 
-    pub fn switch_to_lookup_table(self) -> LookupTable<'a> {
-        LookupTable::new(self.global_table, self.function_table, self.local_table)
-    }
-}
-
-impl<'a> VariableTable<'a> for LocalVariableTable<'a> {
-    fn insert_variable(
-        &mut self,
-        name: &'a str,
-        kind: &'a syntax_tree::Kind,
-    ) -> Result<(), SemanticError<'a>> {
-        self.global_table.check_collision(name, Entry::Variable)?;
-        self.function_table.check_collision(name, Entry::Variable)?;
-        self.local_table.check_collision(name, Entry::Variable)?;
-        self.local_table.insert(name, kind);
-        Ok(())
-    }
-}
-
-pub struct LookupTable<'a> {
-    global_table: NameTable<'a, &'a syntax_tree::Kind>,
-    function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
-    local_table: NameTable<'a, &'a syntax_tree::Kind>,
-}
-
-impl<'a> LookupTable<'a> {
-    fn new(
-        global_table: NameTable<'a, &'a syntax_tree::Kind>,
-        function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
-        local_table: NameTable<'a, &'a syntax_tree::Kind>,
-    ) -> Self {
-        Self {
-            global_table,
-            function_table,
-            local_table,
-        }
-    }
-
     pub fn get_variable(&self, name: &'a str) -> Result<&syntax_tree::Kind, SemanticError<'a>> {
         if let Some(output) = self.local_table.get(name) {
             Ok(output)
@@ -164,13 +126,19 @@ impl<'a> LookupTable<'a> {
             Err(SemanticError::UnknownFunction(name))
         }
     }
+}
 
-    pub fn switch_to_local_table(self) -> LocalVariableTable<'a> {
-        LocalVariableTable::new_from_lookup(
-            self.global_table,
-            self.function_table,
-            self.local_table,
-        )
+impl<'a> VariableTable<'a> for LocalVariableTable<'a> {
+    fn insert_variable(
+        &mut self,
+        name: &'a str,
+        kind: &'a syntax_tree::Kind,
+    ) -> Result<(), SemanticError<'a>> {
+        self.global_table.check_collision(name, Entry::Variable)?;
+        self.function_table.check_collision(name, Entry::Variable)?;
+        self.local_table.check_collision(name, Entry::Variable)?;
+        self.local_table.insert(name, kind);
+        Ok(())
     }
 }
 

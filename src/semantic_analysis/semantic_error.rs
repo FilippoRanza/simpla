@@ -29,6 +29,9 @@ pub enum SemanticError<'a> {
         given: syntax_tree::Kind,
     },
     MismatchedAssignment(MismatchedAssignment<'a>),
+    BreakOutsideLoop,
+    ForLoopError(ForLoopError<'a>),
+    ReturnError(ReturnError<'a>),
     InnerError,
 }
 
@@ -97,3 +100,19 @@ impl<'a> MismatchedAssignment<'a> {
         }
     }
 }
+
+#[derive(PartialEq, Debug)]
+pub enum ForLoopError<'a> {
+    NonIntegerCount(syntax_tree::Kind),
+    NonIntegerStart(syntax_tree::Kind),
+    NonIntegerEnd(syntax_tree::Kind),
+    CountVariableAssignment(&'a str),
+}
+
+#[derive(PartialEq, Debug)]
+pub enum ReturnError<'a> {
+    ReturnOutsideFunction,
+    MissingReturn(&'a str),
+    MismatchedReturnType(syntax_tree::Kind, syntax_tree::Kind)
+}
+
