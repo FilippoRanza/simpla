@@ -113,6 +113,5 @@ pub enum ForLoopError<'a> {
 pub enum ReturnError<'a> {
     ReturnOutsideFunction,
     MissingReturn(&'a str),
-    MismatchedReturnType(syntax_tree::Kind, syntax_tree::Kind)
+    MismatchedReturnType(syntax_tree::Kind, syntax_tree::Kind),
 }
-
