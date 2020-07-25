@@ -451,16 +451,25 @@ mod test {
         assert_eq!(loop_contex.nested_loops, 0);
         assert_eq!(loop_contex.indexes.len(), 0);
 
-
-        let for_stat = make_for_stat(index_var, syntax_tree::Const::RealConst(0.0), syntax_tree::Const::IntConst(10));
+        let for_stat = make_for_stat(
+            index_var,
+            syntax_tree::Const::RealConst(0.0),
+            syntax_tree::Const::IntConst(10),
+        );
         let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
-        assert!(matches!(stat, Err(SemanticError::ForLoopError(ForLoopError::NonIntegerStart(kind))) if kind == syntax_tree::Kind::Real));
+        assert!(
+            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError::NonIntegerStart(kind))) if kind == syntax_tree::Kind::Real)
+        );
 
-
-        let for_stat = make_for_stat(index_var, syntax_tree::Const::IntConst(0), syntax_tree::Const::RealConst(10.0));
+        let for_stat = make_for_stat(
+            index_var,
+            syntax_tree::Const::IntConst(0),
+            syntax_tree::Const::RealConst(10.0),
+        );
         let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
-        assert!(matches!(stat, Err(SemanticError::ForLoopError(ForLoopError::NonIntegerEnd(kind))) if kind == syntax_tree::Kind::Real));
-
+        assert!(
+            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError::NonIntegerEnd(kind))) if kind == syntax_tree::Kind::Real)
+        );
     }
 
     fn make_for_stat(
