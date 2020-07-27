@@ -1,7 +1,7 @@
 use super::name_table::LocalVariableTable;
 use super::semantic_error::{
-    CastError, IncoherentOperation, MismatchedTypes, MismatchedUnary, NonBooleanCondition,
-    SemanticError,
+    ArgumentCountError, CastError, IncoherentOperation, MismatchedArgumentType, MismatchedTypes,
+    MismatchedUnary, NonBooleanCondition, SemanticError,
 };
 use simpla_parser::syntax_tree;
 
@@ -198,21 +198,21 @@ fn check_function_call<'a>(
         for (formal, actual) in func_proto.params.iter().zip(fcall.args.iter()) {
             let actual_kind = type_check(actual, table)?;
             if actual_kind != formal.kind {
-                let err = SemanticError::MismatchedArgumentType {
-                    func_name: &fcall.id,
-                    correct: formal.kind.clone(),
-                    given: actual_kind,
-                };
+                let err = SemanticError::MismatchedArgumentType(MismatchedArgumentType::new(
+                    &fcall.id,
+                    formal.kind.clone(),
+                    actual_kind,
+                ));
                 return Err(err);
             }
         }
         Ok(func_proto.kind.clone())
     } else {
-        let err = SemanticError::ArgumentCountError {
-            func_name: &fcall.id,
-            correct: func_proto.params.len(),
-            given: fcall.args.len(),
-        };
+        let err = SemanticError::ArgumentCountError(ArgumentCountError::new(
+            &fcall.id,
+            func_proto.params.len(),
+            fcall.args.len(),
+        ));
         Err(err)
     }
 }
@@ -260,11 +260,7 @@ mod test {
         let stat = check_function_call(&func_call, &table);
         check_error_status(
             stat,
-            SemanticError::ArgumentCountError {
-                func_name: func_name_a,
-                correct: 0,
-                given: 1,
-            },
+            SemanticError::ArgumentCountError(ArgumentCountError::new(func_name_a, 0, 1)),
         );
 
         let func_call = FuncCall::new(
@@ -274,11 +270,11 @@ mod test {
         let stat = check_function_call(&func_call, &table);
         check_error_status(
             stat,
-            SemanticError::MismatchedArgumentType {
-                func_name: func_name_b,
-                correct: Kind::Str,
-                given: Kind::Int,
-            },
+            SemanticError::MismatchedArgumentType(MismatchedArgumentType::new(
+                func_name_b,
+                Kind::Str,
+                Kind::Int,
+            )),
         );
     }
 

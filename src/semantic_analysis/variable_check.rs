@@ -1,5 +1,5 @@
 use super::name_table::VariableTable;
-use super::semantic_error::SemanticError;
+use super::semantic_error::{SemanticError, VoidVariableDeclaration};
 use simpla_parser::syntax_tree::{Kind, VarDeclList};
 
 pub fn check_variables<'a, T>(
@@ -11,9 +11,9 @@ where
 {
     for var_decl in var_decl_list {
         if var_decl.kind == Kind::Void {
-            return Err(SemanticError::VoidVariableDeclaration {
-                names: &var_decl.id_list,
-            });
+            return Err(SemanticError::VoidVariableDeclaration(
+                VoidVariableDeclaration::new(&var_decl.id_list),
+            ));
         }
         for id in &var_decl.id_list {
             table.insert_variable(id, &var_decl.kind)?;
@@ -57,7 +57,7 @@ mod test {
         match stat {
             Ok(_) => panic!("This test should generate a VoidVariableDeclaration"),
             Err(err) => match err {
-                SemanticError::VoidVariableDeclaration { names } => assert_eq!(names, void_names),
+                SemanticError::VoidVariableDeclaration(decl) => assert_eq!(decl.names, void_names),
                 err => panic!("Wrong error variant: {:?}", err),
             },
         }
@@ -74,14 +74,10 @@ mod test {
         match stat {
             Ok(_) => panic!("This test should generate a NameRidefinition"),
             Err(err) => match err {
-                SemanticError::NameRidefinition {
-                    name,
-                    original,
-                    new,
-                } => {
-                    assert_eq!(name, "a");
-                    assert_eq!(original, Ridefinition::Variable);
-                    assert_eq!(new, Ridefinition::Variable);
+                SemanticError::NameRidefinition(ridef) => {
+                    assert_eq!(ridef.name, "a");
+                    assert_eq!(ridef.original, Ridefinition::Variable);
+                    assert_eq!(ridef.new, Ridefinition::Variable);
                 }
                 err => panic!("Wrong error variant: {:?}", err),
             },

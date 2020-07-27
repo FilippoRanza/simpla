@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::semantic_error::{Ridefinition, SemanticError};
+use super::semantic_error::{NameRidefinition, Ridefinition, SemanticError};
 use simpla_parser::syntax_tree;
 
 pub fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
@@ -191,11 +191,8 @@ impl<'a, T> NameTable<'a, T> {
                     (Ridefinition::Variable, Ridefinition::Variable)
                 }
             };
-            let err = SemanticError::NameRidefinition {
-                name: name.to_owned(),
-                original,
-                new,
-            };
+            let err = NameRidefinition::new(name.to_owned(), original, new);
+            let err = SemanticError::NameRidefinition(err);
             Err(err)
         } else {
             Ok(())
@@ -311,14 +308,10 @@ mod test {
         match stat {
             Ok(_) => panic!("{} has been ridefined", original_name),
             Err(err) => match err {
-                SemanticError::NameRidefinition {
-                    name,
-                    original,
-                    new,
-                } => {
-                    assert_eq!(name, original_name);
-                    assert_eq!(original, original_kind);
-                    assert_eq!(new, new_kind)
+                SemanticError::NameRidefinition(ridef) => {
+                    assert_eq!(ridef.name, original_name);
+                    assert_eq!(ridef.original, original_kind);
+                    assert_eq!(ridef.new, new_kind)
                 }
                 _ => panic!("Wrong Error kind: {:?}", err),
             },

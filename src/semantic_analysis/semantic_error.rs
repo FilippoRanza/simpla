@@ -2,14 +2,8 @@ use simpla_parser::syntax_tree;
 
 #[derive(PartialEq, Debug)]
 pub enum SemanticError<'a> {
-    NameRidefinition {
-        name: String,
-        original: Ridefinition,
-        new: Ridefinition,
-    },
-    VoidVariableDeclaration {
-        names: &'a [String],
-    },
+    NameRidefinition(NameRidefinition),
+    VoidVariableDeclaration(VoidVariableDeclaration<'a>),
     MismatchedOperationTypes(MismatchedTypes),
     IncoherentOperation(IncoherentOperation),
     CastError(CastError),
@@ -18,16 +12,8 @@ pub enum SemanticError<'a> {
     UnknownFunction(&'a str),
     UnknownVariable(&'a str),
     MismatchedUnary(MismatchedUnary),
-    ArgumentCountError {
-        func_name: &'a str,
-        correct: usize,
-        given: usize,
-    },
-    MismatchedArgumentType {
-        func_name: &'a str,
-        correct: syntax_tree::Kind,
-        given: syntax_tree::Kind,
-    },
+    ArgumentCountError(ArgumentCountError<'a>),
+    MismatchedArgumentType(MismatchedArgumentType<'a>),
     MismatchedAssignment(MismatchedAssignment<'a>),
     BreakOutsideLoop,
     ForLoopError(ForLoopError<'a>),
@@ -36,9 +22,37 @@ pub enum SemanticError<'a> {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct NameRidefinition {
+    pub name: String,
+    pub original: Ridefinition,
+    pub new: Ridefinition,
+}
+
+impl NameRidefinition {
+    pub fn new(name: String, original: Ridefinition, new: Ridefinition) -> Self {
+        Self {
+            name,
+            original,
+            new,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Ridefinition {
     Function,
     Variable,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct VoidVariableDeclaration<'a> {
+    pub names: &'a [String],
+}
+
+impl<'a> VoidVariableDeclaration<'a> {
+    pub fn new(names: &'a [String]) -> Self {
+        Self { names }
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -114,4 +128,38 @@ pub enum ReturnError<'a> {
     ReturnOutsideFunction,
     MissingReturn(&'a str),
     MismatchedReturnType(syntax_tree::Kind, syntax_tree::Kind),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ArgumentCountError<'a> {
+    pub func_name: &'a str,
+    pub correct: usize,
+    pub given: usize,
+}
+
+impl<'a> ArgumentCountError<'a> {
+    pub fn new(func_name: &'a str, correct: usize, given: usize) -> Self {
+        Self {
+            func_name,
+            correct,
+            given,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MismatchedArgumentType<'a> {
+    pub func_name: &'a str,
+    pub correct: syntax_tree::Kind,
+    pub given: syntax_tree::Kind,
+}
+
+impl<'a> MismatchedArgumentType<'a> {
+    pub fn new(func_name: &'a str, correct: syntax_tree::Kind, given: syntax_tree::Kind) -> Self {
+        Self {
+            func_name,
+            correct,
+            given,
+        }
+    }
 }
