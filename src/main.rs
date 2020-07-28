@@ -9,9 +9,8 @@ fn compile(code: &str) -> Result<(), String> {
 }
 
 fn main() {
-    match compile("")  {
-        Ok(()) => {},
-        Err(err_msg) => eprintln!("{}", err_msg)
+    match compile("") {
+        Ok(()) => {}
+        Err(err_msg) => eprintln!("{}", err_msg),
     }
-
 }
