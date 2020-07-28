@@ -18,7 +18,6 @@ pub enum SemanticError<'a> {
     BreakOutsideLoop,
     ForLoopError(ForLoopError<'a>),
     ReturnError(ReturnError<'a>),
-    InnerError,
 }
 
 #[derive(Debug, PartialEq)]

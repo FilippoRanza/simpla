@@ -311,9 +311,10 @@ mod test {
             syntax_tree::Expr::Factor(syntax_tree::Factor::Const(syntax_tree::Const::IntConst(7))),
         );
 
-        let mut table = name_table_factory()
+        let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
+        let mut table = table_factory.factory_local_table();
         table
             .insert_variable(var_name, &syntax_tree::Kind::Int)
             .unwrap();
@@ -398,9 +399,11 @@ mod test {
             vec![],
             vec![],
         );
-        let table = name_table_factory()
+        let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
+
+        let table = table_factory.factory_local_table();
 
         check_return_stat(&return_stat, &table, &Contex::Function(&func_decl)).unwrap();
 
@@ -437,9 +440,10 @@ mod test {
             syntax_tree::Const::IntConst(9),
         );
 
-        let mut table = name_table_factory()
+        let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
+        let mut table = table_factory.factory_local_table();
         table
             .insert_variable(index_var, &syntax_tree::Kind::Int)
             .unwrap();
@@ -487,9 +491,10 @@ mod test {
 
     #[test]
     fn test_check_while_stat() {
-        let table = name_table_factory()
+        let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
+        let table = table_factory.factory_local_table();
         let while_stat = make_while_stat(syntax_tree::Operator::Greater);
 
         let mut loop_contex = LoopContext::new();

@@ -56,8 +56,8 @@ impl<'a> FunctionTable<'a> {
         }
     }
 
-    pub fn switch_to_local_table(self) -> LocalVariableTable<'a> {
-        LocalVariableTable::new(self.global_table, self.function_table)
+    pub fn switch_to_local_table(self) -> FactoryLocalVariableTable<'a> {
+        FactoryLocalVariableTable::new(self.global_table, self.function_table)
     }
 
     pub fn insert_function(
@@ -72,13 +72,12 @@ impl<'a> FunctionTable<'a> {
     }
 }
 
-pub struct LocalVariableTable<'a> {
+pub struct FactoryLocalVariableTable<'a> {
     global_table: NameTable<'a, &'a syntax_tree::Kind>,
     function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
-    local_table: NameTable<'a, &'a syntax_tree::Kind>,
 }
 
-impl<'a> LocalVariableTable<'a> {
+impl<'b, 'a: 'b> FactoryLocalVariableTable<'a> {
     fn new(
         global_table: NameTable<'a, &'a syntax_tree::Kind>,
         function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
@@ -86,27 +85,30 @@ impl<'a> LocalVariableTable<'a> {
         Self {
             global_table,
             function_table,
-            local_table: NameTable::new(Entry::Variable),
         }
     }
 
-    fn new_from_lookup(
-        global_table: NameTable<'a, &'a syntax_tree::Kind>,
-        function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
-        local_table: NameTable<'a, &'a syntax_tree::Kind>,
+    pub fn factory_local_table(&'a self) -> LocalVariableTable<'b> {
+        LocalVariableTable::new(&self.global_table, &self.function_table)
+    }
+}
+
+pub struct LocalVariableTable<'a> {
+    global_table: &'a NameTable<'a, &'a syntax_tree::Kind>,
+    function_table: &'a NameTable<'a, &'a syntax_tree::FuncDecl>,
+    local_table: NameTable<'a, &'a syntax_tree::Kind>,
+}
+
+impl<'a> LocalVariableTable<'a> {
+    fn new(
+        global_table: &'a NameTable<'a, &'a syntax_tree::Kind>,
+        function_table: &'a NameTable<'a, &'a syntax_tree::FuncDecl>,
     ) -> Self {
-        let mut local_table = local_table;
-        local_table.clear();
         Self {
             global_table,
             function_table,
-            local_table,
+            local_table: NameTable::new(Entry::Variable),
         }
-    }
-
-    pub fn new_scope(mut self) -> Self {
-        self.local_table.clear();
-        self
     }
 
     pub fn get_variable(&self, name: &'a str) -> Result<&syntax_tree::Kind, SemanticError<'a>> {
@@ -165,10 +167,6 @@ impl<'a, T> NameTable<'a, T> {
 
     fn get(&self, name: &str) -> Option<&T> {
         self.table.get(name)
-    }
-
-    fn clear(&mut self) {
-        self.table.clear();
     }
 
     fn insert(&mut self, name: &'a str, entry: T) {
@@ -265,7 +263,8 @@ mod test {
         );
 
         // state 3: local functions (formal parameters and function local variables)
-        let mut table = table.switch_to_local_table();
+        let table_factory = table.switch_to_local_table();
+        let mut table = table_factory.factory_local_table();
         table
             .insert_variable(local_variable, &syntax_tree::Kind::Real)
             .unwrap();

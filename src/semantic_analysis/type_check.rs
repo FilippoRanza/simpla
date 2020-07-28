@@ -246,7 +246,8 @@ mod test {
         table.insert_function(func_name_a, &func_decl_a).unwrap();
         table.insert_function(func_name_b, &func_decl_b).unwrap();
 
-        let table = table.switch_to_local_table();
+        let table_factory = table.switch_to_local_table();
+        let table = table_factory.factory_local_table();
 
         let func_call = FuncCall::new(func_name_a.to_owned(), vec![]);
 
@@ -287,7 +288,8 @@ mod test {
         table.insert_variable(int_var_name, &Kind::Int).unwrap();
         table.insert_variable(float_var_name, &Kind::Real).unwrap();
 
-        let table = table.switch_to_function_table().switch_to_local_table();
+        let table_factory = table.switch_to_function_table().switch_to_local_table();
+        let table = table_factory.factory_local_table();
 
         let correct_real_cast =
             CastExpr::Real(Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))));
@@ -316,9 +318,11 @@ mod test {
 
     #[test]
     fn test_unary_operator() {
-        let table = name_table_factory()
+        let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
+
+        let table = table_factory.factory_local_table();
 
         let correct_numeric_expr = Box::new(Expr::Node(
             Box::new(Expr::Factor(Factor::Const(Const::IntConst(4)))),
@@ -415,8 +419,8 @@ mod test {
             Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
         );
 
-        let table = table.switch_to_local_table();
-
+        let table_factory = table.switch_to_local_table();
+        let table = table_factory.factory_local_table();
         assert_eq!(
             check_conditional_expression(&correct_cond, &table),
             Ok(Kind::Str)

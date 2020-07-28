@@ -3,6 +3,7 @@ extern crate lalrpop_util;
 lalrpop_mod!(simpla);
 
 pub mod syntax_tree;
+pub use simpla::ProgramParser;
 
 #[cfg(test)]
 mod tests {
