@@ -5,15 +5,15 @@ use super::name_table::{name_table_factory, FactoryLocalVariableTable};
 use super::semantic_error::SemanticError;
 use super::variable_check::check_variables;
 
-pub fn semantic_check<'a>(program: &'a Program) -> Result<(), SemanticError<'a>> {
+pub fn semantic_check<'a>(program: &'a Program) -> Result<(), String> {
     let table_factory = init_table(&program)?;
 
     for decl in &program.functions {
         let mut local_table = table_factory.factory_local_table();
-        check_function_declaration(decl, &mut local_table);
+        check_function_declaration(decl, &mut local_table)?;
     }
 
-    check_main_body(&program.body, &table_factory.factory_local_table());
+    check_main_body(&program.body, &table_factory.factory_local_table())?;
 
     Ok(())
 }

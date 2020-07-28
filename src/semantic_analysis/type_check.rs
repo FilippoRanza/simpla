@@ -208,11 +208,7 @@ fn check_function_call<'a>(
         }
         Ok(func_proto.kind.clone())
     } else {
-        let err = SemanticError::ArgumentCountError(ArgumentCountError::new(
-            &fcall.id,
-            func_proto.params.len(),
-            fcall.args.len(),
-        ));
+        let err = SemanticError::ArgumentCountError(ArgumentCountError::new(&func_proto, &fcall));
         Err(err)
     }
 }
@@ -261,7 +257,7 @@ mod test {
         let stat = check_function_call(&func_call, &table);
         check_error_status(
             stat,
-            SemanticError::ArgumentCountError(ArgumentCountError::new(func_name_a, 0, 1)),
+            SemanticError::ArgumentCountError(ArgumentCountError::new(&func_decl_a, &func_call)),
         );
 
         let func_call = FuncCall::new(

@@ -12,7 +12,7 @@ where
     for var_decl in var_decl_list {
         if var_decl.kind == Kind::Void {
             return Err(SemanticError::VoidVariableDeclaration(
-                VoidVariableDeclaration::new(&var_decl.id_list),
+                VoidVariableDeclaration::new(&var_decl),
             ));
         }
         for id in &var_decl.id_list {
@@ -57,7 +57,9 @@ mod test {
         match stat {
             Ok(_) => panic!("This test should generate a VoidVariableDeclaration"),
             Err(err) => match err {
-                SemanticError::VoidVariableDeclaration(decl) => assert_eq!(decl.names, void_names),
+                SemanticError::VoidVariableDeclaration(decl) => {
+                    assert_eq!(decl.names, &var_decl_list[1])
+                }
                 err => panic!("Wrong error variant: {:?}", err),
             },
         }
