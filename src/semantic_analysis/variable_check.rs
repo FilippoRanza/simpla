@@ -88,6 +88,6 @@ mod test {
 
     fn var_decl_list_factory(names: &[&str], kind: Kind) -> VarDecl {
         let tmp = names.iter().map(|s| s.to_string()).collect();
-        VarDecl::new(tmp, kind)
+        VarDecl::new(tmp, kind, 0, 0)
     }
 }

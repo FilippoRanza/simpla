@@ -309,6 +309,8 @@ mod test {
         let stat = syntax_tree::AssignStat::new(
             var_name.to_owned(),
             syntax_tree::Expr::Factor(syntax_tree::Factor::Const(syntax_tree::Const::IntConst(7))),
+            0,
+            0,
         );
 
         let table_factory = name_table_factory()
@@ -343,6 +345,8 @@ mod test {
             syntax_tree::Expr::Factor(syntax_tree::Factor::Const(syntax_tree::Const::RealConst(
                 7.5,
             ))),
+            0,
+            0,
         );
 
         assert!(matches!(
@@ -398,6 +402,8 @@ mod test {
             syntax_tree::Kind::Real,
             vec![],
             vec![],
+            0,
+            0,
         );
         let table_factory = name_table_factory()
             .switch_to_function_table()
@@ -413,6 +419,8 @@ mod test {
             syntax_tree::Kind::Int,
             vec![],
             vec![],
+            0,
+            0,
         );
 
         let stat = check_return_stat(&return_stat, &table, &Contex::Function(&func_decl));
@@ -486,6 +494,8 @@ mod test {
             make_constant_expr(from),
             make_constant_expr(to),
             vec![],
+            0,
+            0,
         )
     }
 
@@ -524,6 +534,8 @@ mod test {
                 Box::new(make_constant_expr(syntax_tree::Const::RealConst(6.8))),
             ),
             vec![],
+            0,
+            0,
         )
     }
 

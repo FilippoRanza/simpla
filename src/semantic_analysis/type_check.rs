@@ -227,7 +227,15 @@ mod test {
         table.insert_variable(var_name, &Kind::Int).unwrap();
 
         let func_name_a = "test";
-        let func_decl_a = FuncDecl::new(func_name_a.to_owned(), vec![], Kind::Int, vec![], vec![]);
+        let func_decl_a = FuncDecl::new(
+            func_name_a.to_owned(),
+            vec![],
+            Kind::Int,
+            vec![],
+            vec![],
+            0,
+            0,
+        );
 
         let func_name_b = "do_stuff";
         let func_decl_b = FuncDecl::new(
@@ -236,6 +244,8 @@ mod test {
             Kind::Real,
             vec![],
             vec![],
+            0,
+            0,
         );
 
         let mut table = table.switch_to_function_table();
@@ -245,7 +255,7 @@ mod test {
         let table_factory = table.switch_to_local_table();
         let table = table_factory.factory_local_table();
 
-        let func_call = FuncCall::new(func_name_a.to_owned(), vec![]);
+        let func_call = FuncCall::new(func_name_a.to_owned(), vec![], 0, 0);
 
         let stat = check_function_call(&func_call, &table).unwrap();
         assert_eq!(stat, Kind::Int);
@@ -253,6 +263,8 @@ mod test {
         let func_call = FuncCall::new(
             func_name_a.to_owned(),
             vec![Expr::Factor(Factor::Id(var_name.to_owned()))],
+            0,
+            0,
         );
         let stat = check_function_call(&func_call, &table);
         check_error_status(
@@ -263,6 +275,8 @@ mod test {
         let func_call = FuncCall::new(
             func_name_b.to_owned(),
             vec![Expr::Factor(Factor::Id(var_name.to_owned()))],
+            0,
+            0,
         );
         let stat = check_function_call(&func_call, &table);
         check_error_status(
@@ -384,6 +398,8 @@ mod test {
             Kind::Str,
             vec![],
             vec![],
+            0,
+            0,
         );
 
         let void_func_name = "void_function";
@@ -393,6 +409,8 @@ mod test {
             Kind::Void,
             vec![],
             vec![],
+            0,
+            0,
         );
 
         table.insert_function(str_func_name, &str_func).unwrap();
@@ -411,8 +429,12 @@ mod test {
                     Operator::Mul,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
                 )],
+                0,
+                0,
             ))),
             Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+            0,
+            0,
         );
 
         let table_factory = table.switch_to_local_table();
@@ -435,8 +457,12 @@ mod test {
                     Operator::Mul,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
                 )],
+                0,
+                0,
             ))),
             Expr::Factor(Factor::Const(Const::IntConst(41))),
+            0,
+            0,
         );
 
         assert_eq!(
@@ -459,8 +485,12 @@ mod test {
                     Operator::Mul,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
                 )],
+                0,
+                0,
             ))),
             Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+            0,
+            0,
         );
 
         assert_eq!(

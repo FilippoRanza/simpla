@@ -89,6 +89,8 @@ mod tests {
                             Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
                         ),
                     ],
+                    68,
+                    86,
                 ))],
                 Some(vec![Stat::FuncCall(FuncCall::new(
                     "do_other_stuff".to_owned(),
@@ -97,7 +99,11 @@ mod tests {
                         Operator::Mul,
                         Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
                     )],
+                    129,
+                    150,
                 ))]),
+                34,
+                171,
             ))],
         );
         assert_eq!(tree, correct);
@@ -134,6 +140,8 @@ mod tests {
                         ))))),
                     )),
                 ),
+                34,
+                57,
             ))],
         );
 
@@ -173,15 +181,26 @@ mod tests {
         "#;
         let code_b = r#"
             body
-                a = (b * next_number(45));
+                a = (b *     next_number(45));
             end.
         "#;
 
         let tree_a = parse_correct_code(code_a);
         let tree_b = parse_correct_code(code_b);
 
-        assert_eq!(tree_a, tree_b);
+        assert_eq!(tree_a.global_vars, tree_b.global_vars);
+        assert_eq!(tree_a.functions, tree_b.functions);
+
+        assert_eq!(tree_a.body.len(), tree_b.body.len());
+        match (&tree_a.body[0], &tree_b.body[0]) {
+            (Stat::AssignStat(assign_a), Stat::AssignStat(assign_b)) => {
+                assert_eq!(assign_a.id, assign_b.id);
+                assert_eq!(assign_a.expr, assign_b.expr);
+            }
+            _ => panic!()
+        }
     }
+
 
     #[test]
     fn test_ignore_comment() {
@@ -213,19 +232,27 @@ mod tests {
                 Stat::AssignStat(AssignStat::new(
                     "a".to_owned(),
                     Expr::Factor(Factor::Const(Const::RealConst(5.67))),
+                    34,
+                    42,
                 )),
                 Stat::AssignStat(AssignStat::new(
                     "b".to_owned(),
                     Expr::Factor(Factor::CastExpr(CastExpr::Integer(Box::new(Expr::Factor(
                         Factor::Id("a".to_owned()),
                     ))))),
+                    60,
+                    74,
                 )),
                 Stat::AssignStat(AssignStat::new(
                     "c".to_owned(),
                     Expr::Factor(Factor::FuncCall(FuncCall::new(
                         "function".to_owned(),
                         vec![Expr::Factor(Factor::Id("b".to_owned()))],
+                        96,
+                        107,
                     ))),
+                    92,
+                    107,
                 )),
             ],
         );
@@ -268,15 +295,15 @@ mod tests {
         "#;
         let tree = parse_correct_code(code);
         let correct = Program::new(
-            vec![VarDecl::new(vec!["n".to_owned()], Kind::Int)],
+            vec![VarDecl::new(vec!["n".to_owned()], Kind::Int, 13, 25)],
             vec![
                 FuncDecl::new(
                     "do_stuff".to_owned(),
                     vec![ParamDecl::new("a".to_owned(), Kind::Int)],
                     Kind::Void,
                     vec![
-                        VarDecl::new(vec!["i".to_owned(), "j".to_owned()], Kind::Int),
-                        VarDecl::new(vec!["c".to_owned(), "d".to_owned()], Kind::Str),
+                        VarDecl::new(vec!["i".to_owned(), "j".to_owned()], Kind::Int, 87, 102),
+                        VarDecl::new(vec!["c".to_owned(), "d".to_owned()], Kind::Str, 119, 133),
                     ],
                     vec![
                         Stat::AssignStat(AssignStat::new(
@@ -284,12 +311,16 @@ mod tests {
                             Expr::Factor(Factor::Const(Const::StrConst(
                                 "while is a keyword".to_owned(),
                             ))),
+                            167,
+                            191,
                         )),
                         Stat::AssignStat(AssignStat::new(
                             "d".to_owned(),
                             Expr::Factor(Factor::Const(Const::StrConst(
                                 "for = 45 is illegal in simpla".to_owned(),
                             ))),
+                            209,
+                            244,
                         )),
                         Stat::ForStat(ForStat::new(
                             "i".to_owned(),
@@ -302,6 +333,8 @@ mod tests {
                                 Stat::AssignStat(AssignStat::new(
                                     "j".to_owned(),
                                     Expr::Factor(Factor::Id("i".to_owned())),
+                                    330,
+                                    335,
                                 )),
                                 Stat::WhileStat(WhileStat::new(
                                     Expr::Node(
@@ -330,6 +363,8 @@ mod tests {
                                                 Expr::Factor(Factor::Id("d".to_owned())),
                                             ]))],
                                             None,
+                                            396,
+                                            479,
                                         )),
                                         Stat::AssignStat(AssignStat::new(
                                             "j".to_owned(),
@@ -340,13 +375,21 @@ mod tests {
                                                     Const::IntConst(1),
                                                 ))),
                                             ),
+                                            505,
+                                            514,
                                         )),
                                     ],
+                                    357,
+                                    539,
                                 )),
                                 Stat::WriteStat(WriteStat::WriteLine(vec![])),
                             ],
+                            262,
+                            591,
                         )),
                     ],
+                    38,
+                    609,
                 ),
                 FuncDecl::new(
                     "return_five".to_owned(),
@@ -356,6 +399,8 @@ mod tests {
                     vec![Stat::ReturnStat(Some(Expr::Factor(Factor::Const(
                         Const::IntConst(5),
                     ))))],
+                    623,
+                    711,
                 ),
             ],
             vec![
@@ -363,6 +408,8 @@ mod tests {
                 Stat::FuncCall(FuncCall::new(
                     "do_stuff".to_owned(),
                     vec![Expr::Factor(Factor::Id("n".to_owned()))],
+                    771,
+                    782,
                 )),
             ],
         );
@@ -409,9 +456,20 @@ mod tests {
                         Box::new(Expr::Factor(Factor::Id("d".to_owned()))),
                     ))))),
                 )))),
+                34,
+                51,
             ))],
         );
         assert_eq!(correct, tree);
+
+        let mut correct = correct;
+        match &mut correct.body[0] {
+            Stat::AssignStat(assign) => {
+                assign.loc.begin = 35;
+                assign.loc.end = 68;
+            },
+            _ => panic!()
+        }
 
         let code = r"#
             body

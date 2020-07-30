@@ -14,7 +14,7 @@ VarDeclList: syntax_tree::VarDeclList = {
 }
 
 VarDecl : syntax_tree::VarDecl = {
-    <id_list: IdList> ColonPunct <kind: TypeDecl> SemicolonPunct => syntax_tree::VarDecl::new(<>)
+    <begin: @L> <id_list: IdList> ColonPunct <kind: TypeDecl>  SemicolonPunct <end: @R>=> syntax_tree::VarDecl::new(id_list, kind, begin, end)
 }
 
 IdList: syntax_tree::IdList = {
@@ -33,7 +33,10 @@ FuncDeclList: syntax_tree::FuncDeclList = {
 
 
 FuncDecl: syntax_tree::FuncDecl = {
-    FuncKW <id:(Id)> OpenBracketPunct <params: ParamList> CloseBracketPunct ColonPunct <kind: TypeDecl> <vars: VarDeclList> <body:Body> SemicolonPunct => syntax_tree::FuncDecl::new(<>)
+    <begin: @L> FuncKW <id:(Id)> OpenBracketPunct
+     <params: ParamList> CloseBracketPunct ColonPunct
+      <kind: TypeDecl> <vars: VarDeclList> <body:Body>
+       SemicolonPunct <end: @R> => syntax_tree::FuncDecl::new(id, params, kind, vars, body, begin, end)
 }
 
 ParamList: syntax_tree::ParamList = {
@@ -73,11 +76,12 @@ Stat: syntax_tree::Stat = {
 }
 
 AssignStat : syntax_tree::AssignStat = {
-    <id:Id> AssignPunct <expr: Expr> => syntax_tree::AssignStat::new(<>)
+    <begin: @L> <id:Id> AssignPunct <expr: Expr> <end: @R> => syntax_tree::AssignStat::new(id, expr, begin, end)
 }
 
 IfStat : syntax_tree::IfStat = {
-    IfKW <cond:Expr> ThenKW <if_body: StatList> <else_body: (ElseStat)?> EndKW => syntax_tree::IfStat::new(<>)
+    <begin: @L> IfKW <cond:Expr> ThenKW <if_body: StatList> <else_body: (ElseStat)?> EndKW  <end: @R> 
+        => syntax_tree::IfStat::new(cond, if_body, else_body, begin, end)
 }
 
 ElseStat: syntax_tree::StatList = {
@@ -85,11 +89,12 @@ ElseStat: syntax_tree::StatList = {
 }
 
 WhileStat : syntax_tree::WhileStat = {
-    WhileKW <cond: Expr> DoKW <body: StatList> EndKW => syntax_tree::WhileStat::new(<>)
+    <begin: @L> WhileKW <cond: Expr> DoKW <body: StatList> EndKW <end: @R> => syntax_tree::WhileStat::new(cond, body, begin, end)
 }
 
 ForStat : syntax_tree::ForStat = {
-    ForKW <id:Id> AssignPunct <begin_expr: Expr> ToKW <end_expr: Expr> DoKW <body: StatList> EndKW => syntax_tree::ForStat::new(<>)
+    <begin: @L> ForKW <id:Id> AssignPunct <begin_expr: Expr> ToKW <end_expr: Expr> DoKW <body: StatList> EndKW <end: @R> 
+        => syntax_tree::ForStat::new(id, begin_expr, end_expr, body, begin, end)
 }
 
 ReturnStat : Option<syntax_tree::Expr> = {
@@ -110,7 +115,8 @@ WriteStat : syntax_tree::WriteStat = {
 }
 
 FuncCall : syntax_tree::FuncCall = {
-    <id:Id> OpenBracketPunct <args: ExprList> CloseBracketPunct => syntax_tree::FuncCall::new(<>)
+    <begin: @L> <id:Id> OpenBracketPunct <args: ExprList> CloseBracketPunct <end: @R> 
+        => syntax_tree::FuncCall::new(id, args, begin, end)
 }
 
 ExprList : syntax_tree::ExprList = {
@@ -170,7 +176,8 @@ UnaryOp: syntax_tree::UnaryOp = {
 }
 
 CondExpr: syntax_tree::CondExpr = {
-    IfKW <cond: Expr> ThenKW <true_stat: Expr> ElseKW <false_stat: Expr> EndKW => syntax_tree::CondExpr::new(<>)
+    <begin: @L> IfKW <cond: Expr> ThenKW <true_stat: Expr> ElseKW <false_stat: Expr> EndKW <end: @R> 
+        => syntax_tree::CondExpr::new(cond, true_stat, false_stat, begin, end)
 }
 
 CastExpr: syntax_tree::CastExpr = {

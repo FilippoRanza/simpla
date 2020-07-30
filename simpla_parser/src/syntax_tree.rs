@@ -15,6 +15,18 @@ impl Program {
     }
 }
 
+#[derive(PartialEq, Debug)]
+pub struct Location {
+    pub begin: usize,
+    pub end: usize,
+}
+
+impl Location {
+    fn new(begin: usize, end: usize) -> Self {
+        Self { begin, end }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum Kind {
     Int,
@@ -44,11 +56,16 @@ pub enum Operator {
 pub struct VarDecl {
     pub id_list: IdList,
     pub kind: Kind,
+    pub loc: Location,
 }
 
 impl VarDecl {
-    pub fn new(id_list: IdList, kind: Kind) -> Self {
-        Self { id_list, kind }
+    pub fn new(id_list: IdList, kind: Kind, begin: usize, end: usize) -> Self {
+        Self {
+            id_list,
+            kind,
+            loc: Location::new(begin, end),
+        }
     }
 }
 
@@ -71,6 +88,7 @@ pub struct FuncDecl {
     pub params: ParamList,
     pub vars: VarDeclList,
     pub body: StatList,
+    pub loc: Location,
 }
 
 impl FuncDecl {
@@ -80,6 +98,8 @@ impl FuncDecl {
         kind: Kind,
         vars: VarDeclList,
         body: StatList,
+        begin: usize,
+        end: usize,
     ) -> Self {
         Self {
             id,
@@ -87,6 +107,7 @@ impl FuncDecl {
             kind,
             vars,
             body,
+            loc: Location::new(begin, end),
         }
     }
 }
@@ -108,11 +129,16 @@ pub enum Stat {
 pub struct AssignStat {
     pub id: String,
     pub expr: Expr,
+    pub loc: Location,
 }
 
 impl AssignStat {
-    pub fn new(id: String, expr: Expr) -> Self {
-        Self { id, expr }
+    pub fn new(id: String, expr: Expr, begin: usize, end: usize) -> Self {
+        Self {
+            id,
+            expr,
+            loc: Location::new(begin, end),
+        }
     }
 }
 
@@ -121,14 +147,22 @@ pub struct IfStat {
     pub cond: Expr,
     pub if_body: StatList,
     pub else_body: Option<StatList>,
+    pub loc: Location,
 }
 
 impl IfStat {
-    pub fn new(cond: Expr, if_body: StatList, else_body: Option<StatList>) -> Self {
+    pub fn new(
+        cond: Expr,
+        if_body: StatList,
+        else_body: Option<StatList>,
+        begin: usize,
+        end: usize,
+    ) -> Self {
         Self {
             cond,
             if_body,
             else_body,
+            loc: Location::new(begin, end),
         }
     }
 }
@@ -137,11 +171,16 @@ impl IfStat {
 pub struct WhileStat {
     pub cond: Expr,
     pub body: StatList,
+    pub loc: Location,
 }
 
 impl WhileStat {
-    pub fn new(cond: Expr, body: StatList) -> Self {
-        Self { cond, body }
+    pub fn new(cond: Expr, body: StatList, begin: usize, end: usize) -> Self {
+        Self {
+            cond,
+            body,
+            loc: Location::new(begin, end),
+        }
     }
 }
 
@@ -151,15 +190,24 @@ pub struct ForStat {
     pub begin_expr: Expr,
     pub end_expr: Expr,
     pub body: StatList,
+    pub loc: Location,
 }
 
 impl ForStat {
-    pub fn new(id: String, begin_expr: Expr, end_expr: Expr, body: StatList) -> Self {
+    pub fn new(
+        id: String,
+        begin_expr: Expr,
+        end_expr: Expr,
+        body: StatList,
+        begin: usize,
+        end: usize,
+    ) -> Self {
         Self {
             id,
             begin_expr,
             end_expr,
             body,
+            loc: Location::new(begin, end),
         }
     }
 }
@@ -174,11 +222,16 @@ pub enum WriteStat {
 pub struct FuncCall {
     pub id: String,
     pub args: ExprList,
+    pub loc: Location,
 }
 
 impl FuncCall {
-    pub fn new(id: String, args: ExprList) -> Self {
-        Self { id, args }
+    pub fn new(id: String, args: ExprList, begin: usize, end: usize) -> Self {
+        Self {
+            id,
+            args,
+            loc: Location::new(begin, end),
+        }
     }
 }
 
@@ -218,14 +271,16 @@ pub struct CondExpr {
     pub cond: Box<Expr>,
     pub true_stat: Box<Expr>,
     pub false_stat: Box<Expr>,
+    pub loc: Location,
 }
 
 impl CondExpr {
-    pub fn new(cond: Expr, true_stat: Expr, false_stat: Expr) -> Self {
+    pub fn new(cond: Expr, true_stat: Expr, false_stat: Expr, begin: usize, end: usize) -> Self {
         Self {
             cond: Box::new(cond),
             true_stat: Box::new(true_stat),
             false_stat: Box::new(false_stat),
+            loc: Location::new(begin, end),
         }
     }
 }

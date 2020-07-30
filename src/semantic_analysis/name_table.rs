@@ -213,6 +213,8 @@ mod test {
             syntax_tree::Kind::Int,
             vec![],
             vec![],
+            0,
+            0,
         );
 
         let global_variable = "test_variable";
