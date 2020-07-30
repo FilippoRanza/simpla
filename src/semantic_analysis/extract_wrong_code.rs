@@ -7,7 +7,9 @@ pub fn format_wrong_code(code: &str, loc: &Location) -> String {
     let descr = match lines {
         //humans count from 1
         WrongLines::Single(line) => format!("Error on line: {}", line + 1),
-        WrongLines::Multiple(from, to) => format!("Error from line: {} to line: {}", from + 1, to + 1),
+        WrongLines::Multiple(from, to) => {
+            format!("Error from line: {} to line: {}", from + 1, to + 1)
+        }
     };
 
     format!("{}\n{}", descr, block)
@@ -100,7 +102,6 @@ mod test {
         assert_eq!(token.begin, 180);
         assert_eq!(token.end, 235);
 
-
         let (lines, token) = find_wrong_code(CODE, &MULTIPLE_LINE_ERROR);
         assert!(matches!(lines, WrongLines::Multiple(begin, end)
              if begin == 4 && end == 6));
@@ -111,12 +112,10 @@ mod test {
 
     #[test]
     fn test_format_wrong_code() {
-
         let wrong_line = "        quis nostrum exercitationem ullamco laboriosam,";
         let correct_format = format!("Error on line: 6\n{}", wrong_line);
         let ans = format_wrong_code(&CODE, &ONE_LINE_ERROR);
         assert_eq!(correct_format, ans);
-
 
         let wrong_lines = r#"        et dolore magna aliqua. Ut enim ad minim veniam,
         quis nostrum exercitationem ullamco laboriosam,
@@ -124,6 +123,5 @@ mod test {
         let correct_format = format!("Error from line: 5 to line: 7\n{}", wrong_lines);
         let ans = format_wrong_code(&CODE, &MULTIPLE_LINE_ERROR);
         assert_eq!(ans, correct_format);
-
     }
 }
