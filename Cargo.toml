@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 simpla_parser = {path = "simpla_parser",  version = "0.1.0" }
+
+[dev-dependencies]
+lazy_static = "1.4"

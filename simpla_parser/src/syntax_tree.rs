@@ -22,7 +22,7 @@ pub struct Location {
 }
 
 impl Location {
-    fn new(begin: usize, end: usize) -> Self {
+    pub fn new(begin: usize, end: usize) -> Self {
         Self { begin, end }
     }
 }
