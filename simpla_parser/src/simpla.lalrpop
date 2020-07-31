@@ -134,23 +134,23 @@ ExprList : syntax_tree::ExprList = {
 
 
 Expr: syntax_tree::Expr = {
-    <l: Expr> <op: LogicOp> <r: BoolTerm> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <begin: @L> <l: Expr> <op: LogicOp> <r: BoolTerm> <end: @R> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r), syntax_tree::Location::new(begin, end)),
     <BoolTerm> 
 }
 
 
 BoolTerm: syntax_tree::Expr = {
-    <l: RelTerm> <op: RelOp> <r: RelTerm> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <begin: @L> <l: RelTerm> <op: RelOp> <r: RelTerm> <end: @R> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r), syntax_tree::Location::new(begin, end)),
     <RelTerm>
 }
 
 RelTerm: syntax_tree::Expr = {
-    <l: RelTerm> <op: LowPrecOp> <r: LowTerm> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r)),
+    <begin: @L> <l: RelTerm> <op: LowPrecOp> <r: LowTerm> <end: @R> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(r), syntax_tree::Location::new(begin, end)),
     <LowTerm>
 }
 
 LowTerm: syntax_tree::Expr = {
-    <l: LowTerm> <op: HighPrecOp> <r: Factor> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(syntax_tree::Expr::Factor(r))),
+    <begin: @L> <l: LowTerm> <op: HighPrecOp> <r: Factor> <end: @R> => syntax_tree::Expr::Node(Box::new(l), op, Box::new(syntax_tree::Expr::Factor(r)), syntax_tree::Location::new(begin, end)),
     <Factor> => syntax_tree::Expr::Factor(<>)
 }
 

@@ -4,11 +4,11 @@ use simpla_parser::syntax_tree;
 pub enum SemanticError<'a> {
     NameRidefinition(NameRidefinition),
     VoidVariableDeclaration(VoidVariableDeclaration<'a>),
-    MismatchedOperationTypes(MismatchedTypes),
-    IncoherentOperation(IncoherentOperation),
+    MismatchedOperationTypes(MismatchedTypes<'a>),
+    IncoherentOperation(IncoherentOperation<'a>),
     CastError(CastError),
-    NonBooleanCondition(NonBooleanCondition),
-    MismatchedConditionalExpression(MismatchedTypes),
+    NonBooleanCondition(NonBooleanCondition<'a>),
+    MismatchedConditionalExpression(MismatchedTypes<'a>),
     UnknownFunction(&'a str),
     UnknownVariable(&'a str),
     MismatchedUnary(MismatchedUnary),
@@ -55,26 +55,40 @@ impl<'a> VoidVariableDeclaration<'a> {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct MismatchedTypes {
+pub struct MismatchedTypes<'a> {
     pub left: syntax_tree::Kind,
     pub right: syntax_tree::Kind,
+    pub loc: &'a syntax_tree::Location,
 }
 
-impl MismatchedTypes {
-    pub fn new(left: syntax_tree::Kind, right: syntax_tree::Kind) -> Self {
-        Self { left, right }
+impl<'a> MismatchedTypes<'a> {
+    pub fn new(
+        left: syntax_tree::Kind,
+        right: syntax_tree::Kind,
+        loc: &'a syntax_tree::Location,
+    ) -> Self {
+        Self { left, right, loc }
     }
 }
 
 #[derive(PartialEq, Debug)]
-pub struct IncoherentOperation {
+pub struct IncoherentOperation<'a> {
     pub var_kind: syntax_tree::Kind,
     pub operator: syntax_tree::Operator,
+    pub loc: &'a syntax_tree::Location,
 }
 
-impl IncoherentOperation {
-    pub fn new(var_kind: syntax_tree::Kind, operator: syntax_tree::Operator) -> Self {
-        Self { var_kind, operator }
+impl<'a> IncoherentOperation<'a> {
+    pub fn new(
+        var_kind: syntax_tree::Kind,
+        operator: syntax_tree::Operator,
+        loc: &'a syntax_tree::Location,
+    ) -> Self {
+        Self {
+            var_kind,
+            operator,
+            loc,
+        }
     }
 }
 
@@ -85,7 +99,30 @@ pub enum CastError {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum NonBooleanCondition {
+pub struct NonBooleanCondition<'a> {
+    pub loc: &'a syntax_tree::Location,
+    pub error: NonBooleanConditionType,
+}
+
+impl<'a> NonBooleanCondition<'a> {
+    pub fn new_if_stat(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = NonBooleanConditionType::IfStat(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_while_stat(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = NonBooleanConditionType::WhileStat(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_cond_stat(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = NonBooleanConditionType::CondStat(kind);
+        Self { loc, error }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum NonBooleanConditionType {
     IfStat(syntax_tree::Kind),
     WhileStat(syntax_tree::Kind),
     CondStat(syntax_tree::Kind),
@@ -102,14 +139,21 @@ pub struct MismatchedAssignment<'a> {
     pub name: &'a str,
     pub correct: syntax_tree::Kind,
     pub given: syntax_tree::Kind,
+    pub loc: &'a syntax_tree::Location,
 }
 
 impl<'a> MismatchedAssignment<'a> {
-    pub fn new(name: &'a str, correct: syntax_tree::Kind, given: syntax_tree::Kind) -> Self {
+    pub fn new(
+        name: &'a str,
+        correct: syntax_tree::Kind,
+        given: syntax_tree::Kind,
+        loc: &'a syntax_tree::Location,
+    ) -> Self {
         Self {
             name,
             correct,
             given,
+            loc,
         }
     }
 }

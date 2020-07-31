@@ -76,21 +76,23 @@ impl<'a> semantic_error::VoidVariableDeclaration<'a> {
         )
     }
 }
-impl semantic_error::MismatchedTypes {
+impl<'a> semantic_error::MismatchedTypes<'a> {
     fn format_error(&self, code: &str) -> String {
         format!(
-            "left type: {} right type: {}",
+            "left type: {} right type: {}:\n{}",
             kind_to_string(&self.left),
-            kind_to_string(&self.right)
+            kind_to_string(&self.right),
+            format_wrong_code(code, &self.loc)
         )
     }
 }
-impl semantic_error::IncoherentOperation {
+impl<'a> semantic_error::IncoherentOperation<'a> {
     fn format_error(&self, code: &str) -> String {
         format!(
-            "cannot apply operator {} to type {}",
+            "cannot apply operator {} to type {}\n{}",
             operator_to_string(&self.operator),
-            kind_to_string(&self.var_kind)
+            kind_to_string(&self.var_kind),
+            format_wrong_code(code, &self.loc)
         )
     }
 }
@@ -102,19 +104,29 @@ impl semantic_error::CastError {
         }
     }
 }
-impl semantic_error::NonBooleanCondition {
+impl<'a> semantic_error::NonBooleanCondition<'a> {
     fn format_error(&self, code: &str) -> String {
-        fn fmt_err(stat: &str, kind: &syntax_tree::Kind) -> String {
+        fn fmt_err(
+            stat: &str,
+            kind: &syntax_tree::Kind,
+            code: &str,
+            loc: &syntax_tree::Location,
+        ) -> String {
             format!(
-                "{} statement requires a boolean expression as condition, found: {}",
+                "{} statement requires a boolean expression as condition, found: {}\n{}",
                 stat,
-                kind_to_string(kind)
+                kind_to_string(kind),
+                format_wrong_code(code, loc)
             )
         }
-        match self {
-            Self::IfStat(k) => fmt_err("if", k),
-            Self::WhileStat(k) => fmt_err("while", k),
-            Self::CondStat(k) => fmt_err("conditional", k),
+        match &self.error {
+            semantic_error::NonBooleanConditionType::IfStat(k) => fmt_err("if", k, code, self.loc),
+            semantic_error::NonBooleanConditionType::WhileStat(k) => {
+                fmt_err("while", k, code, self.loc)
+            }
+            semantic_error::NonBooleanConditionType::CondStat(k) => {
+                fmt_err("conditional", k, code, self.loc)
+            }
         }
     }
 }
@@ -136,10 +148,11 @@ impl semantic_error::MismatchedUnary {
 impl<'a> semantic_error::MismatchedAssignment<'a> {
     fn format_error(&self, code: &str) -> String {
         format!(
-            "expected {}, found {} in variable {} assignment",
+            "expected {}, found {} in variable {} assignment:\n{}",
             kind_to_string(&self.correct),
             kind_to_string(&self.given),
-            self.name
+            self.name,
+            format_wrong_code(code, self.loc)
         )
     }
 }
@@ -183,10 +196,12 @@ impl semantic_error::ReturnError {
 impl<'a> semantic_error::ArgumentCountError<'a> {
     fn format_error(&self, code: &str) -> String {
         format!(
-            "function: {} expected {} args, but {} are used in function call",
+            "function: {} expected {} args, but {} are used in function call:\nFunction '{1}' definition:\n{}\nFunction '{1}' call:\n{}",
             self.func_decl.id,
             self.func_decl.params.len(),
-            self.func_call.args.len()
+            self.func_call.args.len(),
+            format_wrong_code(code, &self.func_decl.loc),
+            format_wrong_code(code, &self.func_call.loc)
         )
     }
 }

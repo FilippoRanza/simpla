@@ -133,7 +133,12 @@ fn check_assign_stat<'b, 'a: 'b>(
             }
         }
     } else {
-        let err = MismatchedAssignment::new(&assign_stat.id, left_kind.clone(), right_kind);
+        let err = MismatchedAssignment::new(
+            &assign_stat.id,
+            left_kind.clone(),
+            right_kind,
+            &assign_stat.loc,
+        );
         Err(SemanticError::MismatchedAssignment(err))
     }
 }
@@ -203,7 +208,7 @@ fn check_if_stat<'b, 'a: 'b>(
             Ok(())
         }
         other => {
-            let err = NonBooleanCondition::IfStat(other.clone());
+            let err = NonBooleanCondition::new_if_stat(&if_stat.loc, other.clone());
             Err(SemanticError::NonBooleanCondition(err))
         }
     }
@@ -272,7 +277,7 @@ fn check_while_stat<'b, 'a: 'b>(
             Ok(())
         }
         other => {
-            let err = NonBooleanCondition::WhileStat(other.clone());
+            let err = NonBooleanCondition::new_while_stat(&while_stat.loc, other.clone());
             Err(SemanticError::NonBooleanCondition(err))
         }
     }
@@ -302,7 +307,7 @@ fn check_expr_list<'a>(
 mod test {
 
     use super::super::name_table::{name_table_factory, VariableTable};
-    use super::super::semantic_error::ForLoopErrorType;
+    use super::super::semantic_error::{ForLoopErrorType, NonBooleanConditionType};
     use super::*;
 
     #[test]
@@ -355,7 +360,7 @@ mod test {
             matches!(
                     check_assign_stat(&stat, &table, &loop_contex),
                     Err(SemanticError::MismatchedAssignment(mistmatch))
-                    if mistmatch == MismatchedAssignment::new(var_name, syntax_tree::Kind::Int, syntax_tree::Kind::Real)
+                    if mistmatch == MismatchedAssignment::new(var_name, syntax_tree::Kind::Int, syntax_tree::Kind::Real, &syntax_tree::Location::new(0, 0))
             )
         );
     }
@@ -527,9 +532,10 @@ mod test {
 
         let stat = check_while_stat(&while_stat, &table, &Contex::Global, &mut loop_contex);
 
-        assert!(
-            matches!(stat, Err(SemanticError::NonBooleanCondition(NonBooleanCondition::WhileStat(kind))) if kind == syntax_tree::Kind::Real)
-        );
+        assert!(matches!(stat,
+                Err(SemanticError::NonBooleanCondition(NonBooleanCondition{loc: _, error}))
+                if matches!(&error, NonBooleanConditionType::WhileStat(kind)
+                if kind == &syntax_tree::Kind::Real)));
 
         assert_eq!(loop_contex.nested_loops, 0);
         assert_eq!(loop_contex.indexes.len(), 0);
@@ -541,6 +547,7 @@ mod test {
                 Box::new(make_constant_expr(syntax_tree::Const::RealConst(7.8))),
                 op,
                 Box::new(make_constant_expr(syntax_tree::Const::RealConst(6.8))),
+                syntax_tree::Location::new(0, 0),
             ),
             vec![],
             0,

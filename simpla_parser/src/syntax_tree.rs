@@ -237,8 +237,14 @@ impl FuncCall {
 
 #[derive(PartialEq, Debug)]
 pub enum Expr {
-    Node(Box<Expr>, Operator, Box<Expr>),
+    Node(Box<Expr>, Operator, Box<Expr>, Location),
     Factor(Factor),
+}
+
+#[derive(PartialEq, Debug)]
+pub struct FactorWrapper {
+    pub loc: Location,
+    pub fact: Factor
 }
 
 #[derive(PartialEq, Debug)]

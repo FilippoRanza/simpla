@@ -18,10 +18,10 @@ pub fn type_check<'a>(
     table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match expr {
-        syntax_tree::Expr::Node(left, op, right) => {
+        syntax_tree::Expr::Node(left, op, right, loc) => {
             let left_type = type_check(left, table)?;
             let right_type = type_check(right, table)?;
-            let output = coherent_operation(left_type, op, right_type)?;
+            let output = coherent_operation(left_type, op, right_type, loc)?;
             Ok(output)
         }
         syntax_tree::Expr::Factor(fact) => check_factor(fact, table),
@@ -51,6 +51,7 @@ fn coherent_operation<'a>(
     left: syntax_tree::Kind,
     op: &'a syntax_tree::Operator,
     right: syntax_tree::Kind,
+    loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     if left == right {
         let op_kind = OperatorKind::from_operator(op);
@@ -58,27 +59,27 @@ fn coherent_operation<'a>(
             OperatorKind::Logic => match left {
                 syntax_tree::Kind::Bool => Ok(left),
                 _ => {
-                    let err = IncoherentOperation::new(left, op.clone());
+                    let err = IncoherentOperation::new(left, op.clone(), loc);
                     Err(SemanticError::IncoherentOperation(err))
                 }
             },
             OperatorKind::Numeric => match left {
                 syntax_tree::Kind::Int | syntax_tree::Kind::Real => Ok(left),
                 _ => {
-                    let err = IncoherentOperation::new(left, op.clone());
+                    let err = IncoherentOperation::new(left, op.clone(), loc);
                     Err(SemanticError::IncoherentOperation(err))
                 }
             },
             OperatorKind::Relational => match left {
                 syntax_tree::Kind::Int | syntax_tree::Kind::Real => Ok(syntax_tree::Kind::Bool),
                 _ => {
-                    let err = IncoherentOperation::new(left, op.clone());
+                    let err = IncoherentOperation::new(left, op.clone(), loc);
                     Err(SemanticError::IncoherentOperation(err))
                 }
             },
         }
     } else {
-        let mismatch = MismatchedTypes::new(left, right);
+        let mismatch = MismatchedTypes::new(left, right, loc);
         Err(SemanticError::MismatchedOperationTypes(mismatch))
     }
 }
@@ -135,11 +136,11 @@ fn check_conditional_expression<'a>(
         if true_kind == false_kind {
             Ok(true_kind)
         } else {
-            let err = MismatchedTypes::new(true_kind, false_kind);
+            let err = MismatchedTypes::new(true_kind, false_kind, &cond_expr.loc);
             Err(SemanticError::MismatchedConditionalExpression(err))
         }
     } else {
-        let err = NonBooleanCondition::CondStat(cond_kind);
+        let err = NonBooleanCondition::new_cond_stat(&cond_expr.loc, cond_kind);
         Err(SemanticError::NonBooleanCondition(err))
     }
 }
@@ -344,11 +345,13 @@ mod test {
             Box::new(Expr::Factor(Factor::Const(Const::IntConst(4)))),
             Operator::Add,
             Box::new(Expr::Factor(Factor::Const(Const::IntConst(12)))),
+            Location::new(0, 10),
         ));
         let correct_boolean_expr = Box::new(Expr::Node(
             Box::new(Expr::Factor(Factor::Const(Const::BoolConst(false)))),
             Operator::Or,
             Box::new(Expr::Factor(Factor::Const(Const::BoolConst(true)))),
+            Location::new(15, 25),
         ));
 
         let correct_numeric_unary =
@@ -434,6 +437,7 @@ mod test {
                 Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
                 Operator::Greater,
                 Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
+                Location::new(10, 15),
             ),
             Expr::Factor(Factor::FuncCall(FuncCall::new(
                 str_func_name.to_owned(),
@@ -441,6 +445,7 @@ mod test {
                     Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
                     Operator::Mul,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
+                    Location::new(56, 156),
                 )],
                 0,
                 0,
@@ -462,6 +467,7 @@ mod test {
                 Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
                 Operator::Greater,
                 Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
+                Location::new(56, 125),
             ),
             Expr::Factor(Factor::FuncCall(FuncCall::new(
                 str_func_name.to_owned(),
@@ -469,6 +475,7 @@ mod test {
                     Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
                     Operator::Mul,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
+                    Location::new(156, 234),
                 )],
                 0,
                 0,
@@ -481,7 +488,7 @@ mod test {
         assert_eq!(
             check_conditional_expression(&mismatched_cond, &table),
             Err(SemanticError::MismatchedConditionalExpression(
-                MismatchedTypes::new(Kind::Str, Kind::Int)
+                MismatchedTypes::new(Kind::Str, Kind::Int, &Location::new(0, 0))
             ))
         );
 
@@ -490,6 +497,7 @@ mod test {
                 Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
                 Operator::Add,
                 Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
+                Location::new(10, 24),
             ),
             Expr::Factor(Factor::FuncCall(FuncCall::new(
                 str_func_name.to_owned(),
@@ -497,6 +505,7 @@ mod test {
                     Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
                     Operator::Mul,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
+                    Location::new(56, 100),
                 )],
                 0,
                 0,
@@ -509,7 +518,7 @@ mod test {
         assert_eq!(
             check_conditional_expression(&non_bool_cond, &table),
             Err(SemanticError::NonBooleanCondition(
-                NonBooleanCondition::CondStat(Kind::Real)
+                NonBooleanCondition::new_cond_stat(&syntax_tree::Location::new(0, 0), Kind::Real)
             ))
         )
     }
@@ -564,7 +573,8 @@ mod test {
     }
 
     fn run_correct_coherent_test(left: &Kind, op: &Operator, right: &Kind, expected: &Kind) {
-        let stat = coherent_operation(left.clone(), op, right.clone());
+        let loc = Location::new(10, 15);
+        let stat = coherent_operation(left.clone(), op, right.clone(), &loc);
         match stat {
             Ok(kind) => assert_eq!(&kind, expected),
             Err(err) => panic!(
@@ -575,7 +585,8 @@ mod test {
     }
 
     fn run_mismatched_types_test(left: &Kind, op: &Operator, right: &Kind) {
-        let stat = coherent_operation(left.clone(), op, right.clone());
+        let loc = Location::new(10, 15);
+        let stat = coherent_operation(left.clone(), op, right.clone(), &loc);
         match stat {
             Ok(_) => panic!("This test should fail: [{:?}, {:?}, {:?}]", left, op, right),
             Err(err) => match err {
@@ -589,7 +600,8 @@ mod test {
     }
 
     fn run_inchoerent_operation(left: &Kind, op: &Operator, right: &Kind) {
-        let stat = coherent_operation(left.clone(), op, right.clone());
+        let loc = Location::new(10, 15);
+        let stat = coherent_operation(left.clone(), op, right.clone(), &loc);
         match stat {
             Ok(_) => panic!("This test should fail: [{:?}, {:?}, {:?}]", left, op, right),
             Err(err) => match err {
