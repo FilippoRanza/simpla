@@ -11,29 +11,29 @@ impl<'a> convert::From<semantic_error::SemanticError<'a>> for String {
 
 impl<'a> fmt::Display for semantic_error::SemanticError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (decr, msg) = match self {
-            Self::NameRidefinition(err) => ("name error:", format!("{}", err)),
-            Self::VoidVariableDeclaration(err) => ("void declaration error:", format!("{}", err)),
+        let msg = match self {
+            Self::NameRidefinition(err) => format!("name error: {}", err),
+            Self::VoidVariableDeclaration(err) => format!("void declaration error: {}", err),
             Self::MismatchedOperationTypes(err) => {
-                ("mismatched operation error:", format!("{}", err))
+                format!("mismatched operation error: {}", err)
             }
-            Self::IncoherentOperation(err) => ("incoherent operation error:", format!("{}", err)),
-            Self::CastError(err) => ("cast error:", format!("{}", err)),
-            Self::NonBooleanCondition(err) => ("condition error:", format!("{}", err)),
+            Self::IncoherentOperation(err) => format!("incoherent operation error: {}", err),
+            Self::CastError(err) => format!("cast error: {}", err),
+            Self::NonBooleanCondition(err) => format!("condition error: {}", err),
             Self::MismatchedConditionalExpression(err) => {
-                ("conditional expression error:", format!("{}", err))
+                format!("conditional expression error: {}", err)
             }
-            Self::UnknownFunction(err) => ("unknown function error:", format!("{}", err)),
-            Self::UnknownVariable(err) => ("unknonw variable error:", format!("{}", err)),
-            Self::MismatchedUnary(err) => ("negation error:", format!("{}", err)),
-            Self::ArgumentCountError(err) => ("argument count error:", format!("{}", err)),
-            Self::MismatchedArgumentType(err) => ("argument type error:", format!("{}", err)),
-            Self::MismatchedAssignment(err) => ("assignment error:", format!("{}", err)),
-            Self::BreakOutsideLoop => ("break error:", format!("break outside loop")),
-            Self::ForLoopError(err) => ("for loop error:", format!("{}", err)),
-            Self::ReturnError(err) => ("return error:", format!("{}", err)),
+            Self::UnknownFunction(err) => format!("unknown function error: {}", err),
+            Self::UnknownVariable(err) => format!("unknonw variable error: {}", err),
+            Self::MismatchedUnary(err) => format!("negation error: {}", err),
+            Self::ArgumentCountError(err) => format!("argument count error: {}", err),
+            Self::MismatchedArgumentType(err) => format!("argument type error: {}", err),
+            Self::MismatchedAssignment(err) => format!("assignment error: {}", err),
+            Self::BreakOutsideLoop => format!("break error: break outside loop"),
+            Self::ForLoopError(err) => format!("for loop error: {}", err),
+            Self::ReturnError(err) => format!("return error: {}", err),
         };
-        write!(f, "{} {}", decr, msg)
+        write!(f, "{}", msg)
     }
 }
 impl fmt::Display for semantic_error::NameRidefinition {
