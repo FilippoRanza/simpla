@@ -197,10 +197,9 @@ mod tests {
                 assert_eq!(assign_a.id, assign_b.id);
                 assert_eq!(assign_a.expr, assign_b.expr);
             }
-            _ => panic!()
+            _ => panic!(),
         }
     }
-
 
     #[test]
     fn test_ignore_comment() {
@@ -467,8 +466,8 @@ mod tests {
             Stat::AssignStat(assign) => {
                 assign.loc.begin = 35;
                 assign.loc.end = 68;
-            },
-            _ => panic!()
+            }
+            _ => panic!(),
         }
 
         let code = r"#

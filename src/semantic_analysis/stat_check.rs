@@ -351,11 +351,13 @@ mod test {
             0,
         );
 
-        assert!(matches!(
-                check_assign_stat(&stat, &table, &loop_contex),
-                Err(SemanticError::MismatchedAssignment(mistmatch))
-                if mistmatch == MismatchedAssignment::new(var_name, syntax_tree::Kind::Int, syntax_tree::Kind::Real)
-        ));
+        assert!(
+            matches!(
+                    check_assign_stat(&stat, &table, &loop_contex),
+                    Err(SemanticError::MismatchedAssignment(mistmatch))
+                    if mistmatch == MismatchedAssignment::new(var_name, syntax_tree::Kind::Int, syntax_tree::Kind::Real)
+            )
+        );
     }
 
     #[test]
@@ -472,9 +474,10 @@ mod test {
             syntax_tree::Const::IntConst(10),
         );
         let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
-        assert!(
-            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError {loc: _, error})) if matches!(&error, ForLoopErrorType::NonIntegerStart(kind) if kind == &syntax_tree::Kind::Real))
-        );
+        assert!(matches!(stat,
+                Err(SemanticError::ForLoopError(ForLoopError {loc: _, error}))
+                 if matches!(&error, ForLoopErrorType::NonIntegerStart(kind)
+                    if kind == &syntax_tree::Kind::Real)));
 
         let for_stat = make_for_stat(
             index_var,
@@ -483,7 +486,10 @@ mod test {
         );
         let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
         assert!(
-            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError {loc: _, error})) if matches!(&error, ForLoopErrorType::NonIntegerEnd(kind) if kind == &syntax_tree::Kind::Real))
+            matches!(stat,
+                 Err(SemanticError::ForLoopError(ForLoopError {loc: _, error}))
+                  if matches!(&error, ForLoopErrorType::NonIntegerEnd(kind)
+                   if kind == &syntax_tree::Kind::Real))
         );
     }
 
