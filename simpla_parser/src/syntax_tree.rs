@@ -292,7 +292,29 @@ impl CondExpr {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum CastExpr {
+pub struct CastExpr {
+    pub loc: Location,
+    pub expr: CastExprType
+}
+
+impl CastExpr {
+    pub fn new_to_integer(expr: Box<Expr>, begin: usize, end: usize) -> Self {
+        Self {
+            expr: CastExprType::Integer(expr),
+            loc : Location::new(begin, end)
+        }
+    }
+
+    pub fn new_to_real(expr: Box<Expr>, begin: usize, end: usize) -> Self {
+        Self {
+            expr: CastExprType::Real(expr),
+            loc : Location::new(begin, end)
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum CastExprType {
     Integer(Box<Expr>),
     Real(Box<Expr>),
 }

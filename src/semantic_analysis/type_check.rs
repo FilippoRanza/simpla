@@ -103,22 +103,22 @@ fn check_cast<'a>(
     cast: &'a syntax_tree::CastExpr,
     table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
-    match cast {
-        syntax_tree::CastExpr::Integer(expr) => {
+    match &cast.expr {
+        syntax_tree::CastExprType::Integer(expr) => {
             let kind = type_check(expr, table)?;
             if kind == syntax_tree::Kind::Real {
                 Ok(syntax_tree::Kind::Int)
             } else {
-                let err = SemanticError::CastError(CastError::ToInt(kind));
+                let err = SemanticError::CastError(CastError::new_to_int(&cast.loc, kind));
                 Err(err)
             }
         }
-        syntax_tree::CastExpr::Real(expr) => {
+        syntax_tree::CastExprType::Real(expr) => {
             let kind = type_check(expr, table)?;
             if kind == syntax_tree::Kind::Int {
                 Ok(syntax_tree::Kind::Real)
             } else {
-                let err = SemanticError::CastError(CastError::ToReal(kind));
+                let err = SemanticError::CastError(CastError::new_to_real(&cast.loc, kind));
                 Err(err)
             }
         }
@@ -308,28 +308,44 @@ mod test {
         let table_factory = table.switch_to_function_table().switch_to_local_table();
         let table = table_factory.factory_local_table();
 
-        let correct_real_cast =
-            CastExpr::Real(Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))));
-        let correct_int_cast = CastExpr::Integer(Box::new(Expr::Factor(Factor::Id(
-            float_var_name.to_owned(),
-        ))));
+        let correct_real_cast = CastExpr::new_to_real(
+            Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+            123,
+            456,
+        );
+        let correct_int_cast = CastExpr::new_to_integer(
+            Box::new(Expr::Factor(Factor::Id(float_var_name.to_owned()))),
+            234,
+            567,
+        );
 
         assert_eq!(check_cast(&correct_real_cast, &table), Ok(Kind::Real));
         assert_eq!(check_cast(&correct_int_cast, &table), Ok(Kind::Int));
 
-        let wrong_int_cast =
-            CastExpr::Integer(Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))));
-        let wrong_real_cast = CastExpr::Real(Box::new(Expr::Factor(Factor::Id(
-            float_var_name.to_owned(),
-        ))));
+        let wrong_int_cast = CastExpr::new_to_integer(
+            Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+            123,
+            456,
+        );
+        let wrong_real_cast = CastExpr::new_to_real(
+            Box::new(Expr::Factor(Factor::Id(float_var_name.to_owned()))),
+            234,
+            567,
+        );
 
         assert_eq!(
             check_cast(&wrong_int_cast, &table),
-            Err(SemanticError::CastError(CastError::ToInt(Kind::Int)))
+            Err(SemanticError::CastError(CastError::new_to_int(
+                &loc_int,
+                Kind::Int
+            )))
         );
         assert_eq!(
             check_cast(&wrong_real_cast, &table),
-            Err(SemanticError::CastError(CastError::ToReal(Kind::Real)))
+            Err(SemanticError::CastError(CastError::new_to_real(
+                &loc_real,
+                Kind::Real
+            )))
         );
     }
 

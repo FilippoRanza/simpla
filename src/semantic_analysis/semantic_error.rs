@@ -6,7 +6,7 @@ pub enum SemanticError<'a> {
     VoidVariableDeclaration(VoidVariableDeclaration<'a>),
     MismatchedOperationTypes(MismatchedTypes<'a>),
     IncoherentOperation(IncoherentOperation<'a>),
-    CastError(CastError),
+    CastError(CastError<'a>),
     NonBooleanCondition(NonBooleanCondition<'a>),
     MismatchedConditionalExpression(MismatchedTypes<'a>),
     UnknownFunction(&'a str),
@@ -93,7 +93,25 @@ impl<'a> IncoherentOperation<'a> {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum CastError {
+pub struct CastError<'a> {
+    pub loc: &'a syntax_tree::Location,
+    pub error: CastErrorType,
+}
+
+impl<'a> CastError<'a> {
+    pub fn new_to_int(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = CastErrorType::ToInt(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_to_real(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = CastErrorType::ToReal(kind);
+        Self { loc, error }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum CastErrorType {
     ToInt(syntax_tree::Kind),
     ToReal(syntax_tree::Kind),
 }

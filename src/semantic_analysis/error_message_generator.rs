@@ -96,11 +96,16 @@ impl<'a> semantic_error::IncoherentOperation<'a> {
         )
     }
 }
-impl semantic_error::CastError {
+impl<'a> semantic_error::CastError<'a> {
     fn format_error(&self, code: &str) -> String {
-        match self {
-            Self::ToInt(k) => format!("cannot cast {} into integer", kind_to_string(k)),
-            Self::ToReal(k) => format!("cannot cast {} into real", kind_to_string(k)),
+        let token = format_wrong_code(code, &self.loc);
+        match &self.error {
+            semantic_error::CastErrorType::ToInt(k) => {
+                format!("cannot cast {} into integer:\n{}", kind_to_string(k), token)
+            }
+            semantic_error::CastErrorType::ToReal(k) => {
+                format!("cannot cast {} into real:\n{}", kind_to_string(k), token)
+            }
         }
     }
 }
