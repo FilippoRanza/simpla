@@ -12,11 +12,12 @@ pub trait VariableTable<'a> {
         &mut self,
         name: &'a str,
         kind: &'a syntax_tree::Kind,
+        loc: &'a syntax_tree::Location,
     ) -> Result<(), SemanticError<'a>>;
 }
 
 pub struct GlobalVariableTable<'a> {
-    global_table: NameTable<'a, &'a syntax_tree::Kind>,
+    global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
 }
 
 impl<'a> GlobalVariableTable<'a> {
@@ -36,20 +37,24 @@ impl<'a> VariableTable<'a> for GlobalVariableTable<'a> {
         &mut self,
         name: &'a str,
         kind: &'a syntax_tree::Kind,
+        loc: &'a syntax_tree::Location,
     ) -> Result<(), SemanticError<'a>> {
-        self.global_table.check_collision(name, Entry::Variable)?;
-        self.global_table.insert(name, kind);
+        self.global_table
+            .check_collision(name, loc, Entry::Variable)?;
+        self.global_table.insert(name, (kind, loc));
         Ok(())
     }
 }
 
 pub struct FunctionTable<'a> {
-    global_table: NameTable<'a, &'a syntax_tree::Kind>,
+    global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
     function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
 }
 
 impl<'a> FunctionTable<'a> {
-    fn new(global_table: NameTable<'a, &'a syntax_tree::Kind>) -> Self {
+    fn new(
+        global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+    ) -> Self {
         Self {
             global_table,
             function_table: NameTable::new(Entry::Function),
@@ -65,21 +70,23 @@ impl<'a> FunctionTable<'a> {
         name: &'a str,
         func_decl: &'a syntax_tree::FuncDecl,
     ) -> Result<(), SemanticError<'a>> {
-        self.global_table.check_collision(name, Entry::Function)?;
-        self.function_table.check_collision(name, Entry::Function)?;
+        self.global_table
+            .check_collision(name, &func_decl.loc, Entry::Function)?;
+        self.function_table
+            .check_collision(name, &func_decl.loc, Entry::Function)?;
         self.function_table.insert(name, func_decl);
         Ok(())
     }
 }
 
 pub struct FactoryLocalVariableTable<'a> {
-    global_table: NameTable<'a, &'a syntax_tree::Kind>,
+    global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
     function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
 }
 
 impl<'b, 'a: 'b> FactoryLocalVariableTable<'a> {
     fn new(
-        global_table: NameTable<'a, &'a syntax_tree::Kind>,
+        global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
         function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
     ) -> Self {
         Self {
@@ -94,14 +101,14 @@ impl<'b, 'a: 'b> FactoryLocalVariableTable<'a> {
 }
 
 pub struct LocalVariableTable<'a> {
-    global_table: &'a NameTable<'a, &'a syntax_tree::Kind>,
+    global_table: &'a NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
     function_table: &'a NameTable<'a, &'a syntax_tree::FuncDecl>,
-    local_table: NameTable<'a, &'a syntax_tree::Kind>,
+    local_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
 }
 
 impl<'a> LocalVariableTable<'a> {
     fn new(
-        global_table: &'a NameTable<'a, &'a syntax_tree::Kind>,
+        global_table: &'a NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
         function_table: &'a NameTable<'a, &'a syntax_tree::FuncDecl>,
     ) -> Self {
         Self {
@@ -112,9 +119,9 @@ impl<'a> LocalVariableTable<'a> {
     }
 
     pub fn get_variable(&self, name: &'a str) -> Result<&syntax_tree::Kind, SemanticError<'a>> {
-        if let Some(output) = self.local_table.get(name) {
+        if let Some((output, _)) = self.local_table.get(name) {
             Ok(output)
-        } else if let Some(output) = self.global_table.get(name) {
+        } else if let Some((output, _)) = self.global_table.get(name) {
             Ok(output)
         } else {
             Err(SemanticError::UnknownVariable(name))
@@ -135,11 +142,15 @@ impl<'a> VariableTable<'a> for LocalVariableTable<'a> {
         &mut self,
         name: &'a str,
         kind: &'a syntax_tree::Kind,
+        loc: &'a syntax_tree::Location,
     ) -> Result<(), SemanticError<'a>> {
-        self.global_table.check_collision(name, Entry::Variable)?;
-        self.function_table.check_collision(name, Entry::Variable)?;
-        self.local_table.check_collision(name, Entry::Variable)?;
-        self.local_table.insert(name, kind);
+        self.global_table
+            .check_collision(name, loc, Entry::Variable)?;
+        self.function_table
+            .check_collision(name, loc, Entry::Variable)?;
+        self.local_table
+            .check_collision(name, loc, Entry::Variable)?;
+        self.local_table.insert(name, (kind, loc));
         Ok(())
     }
 }
@@ -152,12 +163,13 @@ enum Entry {
 struct NameTable<'a, T>
 where
     T: 'a,
+    T: Localizable,
 {
     table: HashMap<&'a str, T>,
     entry_kind: Entry,
 }
 
-impl<'a, T> NameTable<'a, T> {
+impl<'a, T: Localizable> NameTable<'a, T> {
     fn new(entry_kind: Entry) -> Self {
         Self {
             table: HashMap::new(),
@@ -173,21 +185,30 @@ impl<'a, T> NameTable<'a, T> {
         self.table.insert(name, entry);
     }
 
-    fn check_collision(&self, name: &str, new_entry: Entry) -> Result<(), SemanticError<'a>> {
-        if let Some(_) = self.table.get(name) {
+    fn check_collision(
+        &self,
+        name: &str,
+        loc: &syntax_tree::Location,
+        new_entry: Entry,
+    ) -> Result<(), SemanticError<'a>> {
+        if let Some(data) = self.table.get(name) {
             let (original, new) = match (&self.entry_kind, new_entry) {
-                (Entry::Function, Entry::Function) => {
-                    (Ridefinition::Function, Ridefinition::Function)
-                }
-                (Entry::Function, Entry::Variable) => {
-                    (Ridefinition::Function, Ridefinition::Variable)
-                }
-                (Entry::Variable, Entry::Function) => {
-                    (Ridefinition::Variable, Ridefinition::Function)
-                }
-                (Entry::Variable, Entry::Variable) => {
-                    (Ridefinition::Variable, Ridefinition::Variable)
-                }
+                (Entry::Function, Entry::Function) => (
+                    Ridefinition::Function(data.get_location().clone()),
+                    Ridefinition::Function(loc.clone()),
+                ),
+                (Entry::Function, Entry::Variable) => (
+                    Ridefinition::Function(data.get_location().clone()),
+                    Ridefinition::Variable(loc.clone()),
+                ),
+                (Entry::Variable, Entry::Function) => (
+                    Ridefinition::Variable(data.get_location().clone()),
+                    Ridefinition::Function(loc.clone()),
+                ),
+                (Entry::Variable, Entry::Variable) => (
+                    Ridefinition::Variable(data.get_location().clone()),
+                    Ridefinition::Variable(loc.clone()),
+                ),
             };
             let err = NameRidefinition::new(name.to_owned(), original, new);
             let err = SemanticError::NameRidefinition(err);
@@ -195,6 +216,22 @@ impl<'a, T> NameTable<'a, T> {
         } else {
             Ok(())
         }
+    }
+}
+
+trait Localizable {
+    fn get_location(&self) -> &syntax_tree::Location;
+}
+
+impl Localizable for &syntax_tree::FuncDecl {
+    fn get_location(&self) -> &syntax_tree::Location {
+        &self.loc
+    }
+}
+
+impl Localizable for (&syntax_tree::Kind, &syntax_tree::Location) {
+    fn get_location(&self) -> &syntax_tree::Location {
+        &self.1
     }
 }
 
@@ -213,11 +250,17 @@ mod test {
             syntax_tree::Kind::Int,
             vec![],
             vec![],
-            0,
-            0,
+            111,
+            222,
         );
 
+        // some random location
+        let loc_a = syntax_tree::Location::new(14, 25);
+        let loc_b = syntax_tree::Location::new(34, 60);
+        let loc_c = syntax_tree::Location::new(67, 91);
+
         let global_variable = "test_variable";
+
         let other_global_variable = "global_variable";
 
         let local_variable = "local_test";
@@ -226,18 +269,18 @@ mod test {
         // state 1: global variables
         let mut table = name_table_factory();
         table
-            .insert_variable(global_variable, &syntax_tree::Kind::Int)
+            .insert_variable(global_variable, &syntax_tree::Kind::Int, &loc_a)
             .unwrap();
         table
-            .insert_variable(other_global_variable, &syntax_tree::Kind::Real)
+            .insert_variable(other_global_variable, &syntax_tree::Kind::Real, &loc_b)
             .unwrap();
 
-        let err = table.insert_variable(global_variable, &syntax_tree::Kind::Bool);
+        let err = table.insert_variable(global_variable, &syntax_tree::Kind::Bool, &loc_c);
         check_status(
             err,
             global_variable,
-            Ridefinition::Variable,
-            Ridefinition::Variable,
+            Ridefinition::Variable(loc_a.clone()),
+            Ridefinition::Variable(loc_c.clone()),
         );
 
         // state 2: functions
@@ -248,8 +291,8 @@ mod test {
         check_status(
             err,
             global_variable,
-            Ridefinition::Variable,
-            Ridefinition::Function,
+            Ridefinition::Variable(loc_a.clone()),
+            Ridefinition::Function(syntax_tree::Location::new(111, 222)),
         );
 
         table
@@ -260,43 +303,47 @@ mod test {
         check_status(
             err,
             function_name,
-            Ridefinition::Function,
-            Ridefinition::Function,
+            Ridefinition::Function(syntax_tree::Location::new(111, 222)),
+            Ridefinition::Function(syntax_tree::Location::new(111, 222)),
         );
 
         // state 3: local functions (formal parameters and function local variables)
+        let loc_d = syntax_tree::Location::new(123, 160);
+        let loc_e = syntax_tree::Location::new(178, 190);
+        let loc_f = syntax_tree::Location::new(210, 260);
+
         let table_factory = table.switch_to_local_table();
         let mut table = table_factory.factory_local_table();
         table
-            .insert_variable(local_variable, &syntax_tree::Kind::Real)
+            .insert_variable(local_variable, &syntax_tree::Kind::Real, &loc_d)
             .unwrap();
 
-        let err = table.insert_variable(global_variable, &syntax_tree::Kind::Str);
+        let err = table.insert_variable(global_variable, &syntax_tree::Kind::Str, &loc_e);
         check_status(
             err,
             global_variable,
-            Ridefinition::Variable,
-            Ridefinition::Variable,
+            Ridefinition::Variable(loc_a.clone()),
+            Ridefinition::Variable(loc_e.clone()),
         );
 
-        let err = table.insert_variable(function_name, &syntax_tree::Kind::Bool);
+        let err = table.insert_variable(function_name, &syntax_tree::Kind::Bool, &loc_f);
         check_status(
             err,
             function_name,
-            Ridefinition::Function,
-            Ridefinition::Variable,
+            Ridefinition::Function(syntax_tree::Location::new(111, 222)),
+            Ridefinition::Variable(loc_f.clone()),
         );
 
         table
-            .insert_variable(other_local_variable, &syntax_tree::Kind::Int)
+            .insert_variable(other_local_variable, &syntax_tree::Kind::Int, &loc_e)
             .unwrap();
 
-        let err = table.insert_variable(other_local_variable, &syntax_tree::Kind::Int);
+        let err = table.insert_variable(other_local_variable, &syntax_tree::Kind::Int, &loc_f);
         check_status(
             err,
             other_local_variable,
-            Ridefinition::Variable,
-            Ridefinition::Variable,
+            Ridefinition::Variable(loc_e.clone()),
+            Ridefinition::Variable(loc_f.clone()),
         );
     }
 

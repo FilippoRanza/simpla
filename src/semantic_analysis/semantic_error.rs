@@ -39,8 +39,8 @@ impl NameRidefinition {
 
 #[derive(Debug, PartialEq)]
 pub enum Ridefinition {
-    Function,
-    Variable,
+    Function(syntax_tree::Location),
+    Variable(syntax_tree::Location),
 }
 
 #[derive(Debug, PartialEq)]
@@ -115,7 +115,35 @@ impl<'a> MismatchedAssignment<'a> {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum ForLoopError<'a> {
+pub struct ForLoopError<'a> {
+    pub loc: &'a syntax_tree::Location,
+    pub error: ForLoopErrorType<'a>,
+}
+
+impl<'a> ForLoopError<'a> {
+    pub fn new_non_integer_count(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = ForLoopErrorType::NonIntegerCount(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_non_integer_start(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = ForLoopErrorType::NonIntegerStart(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_non_integer_end(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = ForLoopErrorType::NonIntegerEnd(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_count_variable_assignment(loc: &'a syntax_tree::Location, name: &'a str) -> Self {
+        let error = ForLoopErrorType::CountVariableAssignment(name);
+        Self { loc, error }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum ForLoopErrorType<'a> {
     NonIntegerCount(syntax_tree::Kind),
     NonIntegerStart(syntax_tree::Kind),
     NonIntegerEnd(syntax_tree::Kind),

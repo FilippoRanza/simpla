@@ -1,133 +1,141 @@
+use super::extract_wrong_code::format_wrong_code;
 use super::semantic_error;
 use simpla_parser::syntax_tree;
 use std::convert;
-use std::fmt;
 
 impl<'a> convert::From<semantic_error::SemanticError<'a>> for String {
     fn from(err: semantic_error::SemanticError) -> String {
-        format!("{}", err)
+        format!("{}", err.format_error(""))
     }
 }
 
-impl<'a> fmt::Display for semantic_error::SemanticError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<'a> semantic_error::SemanticError<'a> {
+    fn format_error(&self, code: &str) -> String {
         let msg = match self {
-            Self::NameRidefinition(err) => format!("name error: {}", err),
-            Self::VoidVariableDeclaration(err) => format!("void declaration error: {}", err),
-            Self::MismatchedOperationTypes(err) => {
-                format!("mismatched operation error: {}", err)
+            Self::NameRidefinition(err) => format!("name error: {}", err.format_error(code)),
+            Self::VoidVariableDeclaration(err) => {
+                format!("void declaration error: {}", err.format_error(code))
             }
-            Self::IncoherentOperation(err) => format!("incoherent operation error: {}", err),
-            Self::CastError(err) => format!("cast error: {}", err),
-            Self::NonBooleanCondition(err) => format!("condition error: {}", err),
+            Self::MismatchedOperationTypes(err) => {
+                format!("mismatched operation error: {}", err.format_error(code))
+            }
+            Self::IncoherentOperation(err) => {
+                format!("incoherent operation error: {}", err.format_error(code))
+            }
+            Self::CastError(err) => format!("cast error: {}", err.format_error(code)),
+            Self::NonBooleanCondition(err) => {
+                format!("condition error: {}", err.format_error(code))
+            }
             Self::MismatchedConditionalExpression(err) => {
-                format!("conditional expression error: {}", err)
+                format!("conditional expression error: {}", err.format_error(code))
             }
             Self::UnknownFunction(err) => format!("unknown function error: {}", err),
             Self::UnknownVariable(err) => format!("unknonw variable error: {}", err),
-            Self::MismatchedUnary(err) => format!("negation error: {}", err),
-            Self::ArgumentCountError(err) => format!("argument count error: {}", err),
-            Self::MismatchedArgumentType(err) => format!("argument type error: {}", err),
-            Self::MismatchedAssignment(err) => format!("assignment error: {}", err),
+            Self::MismatchedUnary(err) => format!("negation error: {}", err.format_error(code)),
+            Self::ArgumentCountError(err) => {
+                format!("argument count error: {}", err.format_error(code))
+            }
+            Self::MismatchedArgumentType(err) => {
+                format!("argument type error: {}", err.format_error(code))
+            }
+            Self::MismatchedAssignment(err) => {
+                format!("assignment error: {}", err.format_error(code))
+            }
             Self::BreakOutsideLoop => format!("break error: break outside loop"),
-            Self::ForLoopError(err) => format!("for loop error: {}", err),
-            Self::ReturnError(err) => format!("return error: {}", err),
+            Self::ForLoopError(err) => format!("for loop error: {}", err.format_error(code)),
+            Self::ReturnError(err) => format!("return error: {}", err.format_error(code)),
         };
-        write!(f, "{}", msg)
+        format!("{}", msg)
     }
 }
-impl fmt::Display for semantic_error::NameRidefinition {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+impl semantic_error::NameRidefinition {
+    fn format_error(&self, code: &str) -> String {
+        format!(
             "{} defined multiple times, originally: {}, redefined: {}",
-            self.name, self.original, self.new
+            self.name,
+            self.original.format_error(code),
+            self.new.format_error(code)
         )
     }
 }
-impl fmt::Display for semantic_error::Ridefinition {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl semantic_error::Ridefinition {
+    fn format_error(&self, code: &str) -> String {
         match self {
-            Self::Function => write!(f, "function"),
-            Self::Variable => write!(f, "variable"),
+            Self::Function(loc) => format!("function here:\n{}", format_wrong_code(code, loc)),
+            Self::Variable(loc) => format!("variable here:\n{}", format_wrong_code(code, loc)),
         }
     }
 }
-impl<'a> fmt::Display for semantic_error::VoidVariableDeclaration<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<'a> semantic_error::VoidVariableDeclaration<'a> {
+    fn format_error(&self, code: &str) -> String {
         let tmp = self.names.id_list.join(", ");
-        write!(
-            f,
-            "Variables: [{}] defined as type void: only function can have type void",
-            tmp
+        format!(
+            "Variables: [{}] defined as type void: only function can have type void:\n{}",
+            tmp,
+            format_wrong_code(code, &self.names.loc)
         )
     }
 }
-impl fmt::Display for semantic_error::MismatchedTypes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+impl semantic_error::MismatchedTypes {
+    fn format_error(&self, code: &str) -> String {
+        format!(
             "left type: {} right type: {}",
             kind_to_string(&self.left),
             kind_to_string(&self.right)
         )
     }
 }
-impl fmt::Display for semantic_error::IncoherentOperation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+impl semantic_error::IncoherentOperation {
+    fn format_error(&self, code: &str) -> String {
+        format!(
             "cannot apply operator {} to type {}",
             operator_to_string(&self.operator),
             kind_to_string(&self.var_kind)
         )
     }
 }
-impl fmt::Display for semantic_error::CastError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl semantic_error::CastError {
+    fn format_error(&self, code: &str) -> String {
         match self {
-            Self::ToInt(k) => write!(f, "cannot cast {} into integer", kind_to_string(k)),
-            Self::ToReal(k) => write!(f, "cannot cast {} into real", kind_to_string(k)),
+            Self::ToInt(k) => format!("cannot cast {} into integer", kind_to_string(k)),
+            Self::ToReal(k) => format!("cannot cast {} into real", kind_to_string(k)),
         }
     }
 }
-impl fmt::Display for semantic_error::NonBooleanCondition {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fn fmt(f: &mut fmt::Formatter, stat: &str, kind: &syntax_tree::Kind) -> fmt::Result {
-            write!(
-                f,
+impl semantic_error::NonBooleanCondition {
+    fn format_error(&self, code: &str) -> String {
+        fn fmt_err(stat: &str, kind: &syntax_tree::Kind) -> String {
+            format!(
                 "{} statement requires a boolean expression as condition, found: {}",
                 stat,
                 kind_to_string(kind)
             )
         }
         match self {
-            Self::IfStat(k) => fmt(f, "if", k),
-            Self::WhileStat(k) => fmt(f, "while", k),
-            Self::CondStat(k) => fmt(f, "conditional", k),
+            Self::IfStat(k) => fmt_err("if", k),
+            Self::WhileStat(k) => fmt_err("while", k),
+            Self::CondStat(k) => fmt_err("conditional", k),
         }
     }
 }
-impl fmt::Display for semantic_error::MismatchedUnary {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fn fmt(f: &mut fmt::Formatter, unary: &str, kind: &syntax_tree::Kind) -> fmt::Result {
-            write!(
-                f,
+impl semantic_error::MismatchedUnary {
+    fn format_error(&self, code: &str) -> String {
+        fn fmt_err(unary: &str, kind: &syntax_tree::Kind) -> String {
+            format!(
                 "{} cannot be applied to type: {}",
                 unary,
                 kind_to_string(kind)
             )
         }
         match self {
-            Self::Logic(k) => fmt(f, "logic negation", k),
-            Self::Numeric(k) => fmt(f, "arithmetic negation", k),
+            Self::Logic(k) => fmt_err("logic negation", k),
+            Self::Numeric(k) => fmt_err("arithmetic negation", k),
         }
     }
 }
-impl<'a> fmt::Display for semantic_error::MismatchedAssignment<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+impl<'a> semantic_error::MismatchedAssignment<'a> {
+    fn format_error(&self, code: &str) -> String {
+        format!(
             "expected {}, found {} in variable {} assignment",
             kind_to_string(&self.correct),
             kind_to_string(&self.given),
@@ -135,39 +143,36 @@ impl<'a> fmt::Display for semantic_error::MismatchedAssignment<'a> {
         )
     }
 }
-impl<'a> fmt::Display for semantic_error::ForLoopError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::CountVariableAssignment(name) => {
-                write!(f, "count variable {} is modified into loop body", name)
+impl<'a> semantic_error::ForLoopError<'a> {
+    fn format_error(&self, code: &str) -> String {
+        let descr = match &self.error {
+            semantic_error::ForLoopErrorType::CountVariableAssignment(name) => {
+                format!("count variable {} is modified into loop body", name)
             }
-            Self::NonIntegerCount(k) => write!(
-                f,
+            semantic_error::ForLoopErrorType::NonIntegerCount(k) => format!(
                 "count variable is declared as {}, expected integer",
                 kind_to_string(k)
             ),
-            Self::NonIntegerStart(k) => write!(
-                f,
+            semantic_error::ForLoopErrorType::NonIntegerStart(k) => format!(
                 "for loop start expression of type {}, expected integer",
                 kind_to_string(k)
             ),
-            Self::NonIntegerEnd(k) => write!(
-                f,
+            semantic_error::ForLoopErrorType::NonIntegerEnd(k) => format!(
                 "for loop end expression of type {}, expected integer",
                 kind_to_string(k)
             ),
-        }
+        };
+        let token = format_wrong_code(code, self.loc);
+        format!("{}\n{}", descr, token)
     }
 }
-impl fmt::Display for semantic_error::ReturnError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl semantic_error::ReturnError {
+    fn format_error(&self, code: &str) -> String {
         match self {
-            Self::ReturnOutsideFunction => write!(
-                f,
-                "return statement is not allowd in main body, only in function declaration"
-            ),
-            Self::MismatchedReturnType(correct, given) => write!(
-                f,
+            Self::ReturnOutsideFunction => {
+                format!("return statement is not allowd in main body, only in function declaration")
+            }
+            Self::MismatchedReturnType(correct, given) => format!(
                 "return statement type: {}, but {} was expected",
                 kind_to_string(correct),
                 kind_to_string(given)
@@ -175,10 +180,9 @@ impl fmt::Display for semantic_error::ReturnError {
         }
     }
 }
-impl<'a> fmt::Display for semantic_error::ArgumentCountError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+impl<'a> semantic_error::ArgumentCountError<'a> {
+    fn format_error(&self, code: &str) -> String {
+        format!(
             "function: {} expected {} args, but {} are used in function call",
             self.func_decl.id,
             self.func_decl.params.len(),
@@ -186,10 +190,9 @@ impl<'a> fmt::Display for semantic_error::ArgumentCountError<'a> {
         )
     }
 }
-impl<'a> fmt::Display for semantic_error::MismatchedArgumentType<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+impl<'a> semantic_error::MismatchedArgumentType<'a> {
+    fn format_error(&self, code: &str) -> String {
+        format!(
             "calling function {} argument expected type: {}, found {}",
             self.func_name,
             kind_to_string(&self.correct),

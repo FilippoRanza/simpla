@@ -224,7 +224,8 @@ mod test {
     fn test_check_function_call() {
         let mut table = name_table_factory();
         let var_name = "value";
-        table.insert_variable(var_name, &Kind::Int).unwrap();
+        let loc = Location::new(123, 456);
+        table.insert_variable(var_name, &Kind::Int, &loc).unwrap();
 
         let func_name_a = "test";
         let func_decl_a = FuncDecl::new(
@@ -293,10 +294,15 @@ mod test {
     fn test_check_cast() {
         let int_var_name = "int_var";
         let float_var_name = "float_var";
-
+        let loc_int = Location::new(123, 456);
+        let loc_real = Location::new(234, 567);
         let mut table = name_table_factory();
-        table.insert_variable(int_var_name, &Kind::Int).unwrap();
-        table.insert_variable(float_var_name, &Kind::Real).unwrap();
+        table
+            .insert_variable(int_var_name, &Kind::Int, &loc_int)
+            .unwrap();
+        table
+            .insert_variable(float_var_name, &Kind::Real, &loc_real)
+            .unwrap();
 
         let table_factory = table.switch_to_function_table().switch_to_local_table();
         let table = table_factory.factory_local_table();
@@ -386,8 +392,15 @@ mod test {
         let int_var_name = "int_var";
         let real_var_name = "real_var";
 
-        table.insert_variable(int_var_name, &Kind::Int).unwrap();
-        table.insert_variable(real_var_name, &Kind::Real).unwrap();
+        let loc_int = Location::new(123, 456);
+        let loc_real = Location::new(234, 567);
+
+        table
+            .insert_variable(int_var_name, &Kind::Int, &loc_int)
+            .unwrap();
+        table
+            .insert_variable(real_var_name, &Kind::Real, &loc_real)
+            .unwrap();
 
         let mut table = table.switch_to_function_table();
 

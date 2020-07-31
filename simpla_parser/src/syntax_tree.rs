@@ -15,7 +15,7 @@ impl Program {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Location {
     pub begin: usize,
     pub end: usize,

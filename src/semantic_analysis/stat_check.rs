@@ -127,7 +127,8 @@ fn check_assign_stat<'b, 'a: 'b>(
         match contex.check_assign(&assign_stat.id) {
             CheckStatus::Success => Ok(()),
             CheckStatus::Failure => {
-                let err = ForLoopError::CountVariableAssignment(&assign_stat.id);
+                let err =
+                    ForLoopError::new_count_variable_assignment(&assign_stat.loc, &assign_stat.id);
                 Err(SemanticError::ForLoopError(err))
             }
         }
@@ -153,7 +154,7 @@ fn check_for_stat<'b, 'a: 'b>(
     match table.get_variable(&for_stat.id)? {
         syntax_tree::Kind::Int => {}
         other => {
-            let err = ForLoopError::NonIntegerCount(other.clone());
+            let err = ForLoopError::new_non_integer_count(&for_stat.loc, other.clone());
             return Err(SemanticError::ForLoopError(err));
         }
     }
@@ -161,7 +162,7 @@ fn check_for_stat<'b, 'a: 'b>(
     match type_check(&for_stat.begin_expr, table)? {
         syntax_tree::Kind::Int => {}
         other => {
-            let err = ForLoopError::NonIntegerStart(other.clone());
+            let err = ForLoopError::new_non_integer_start(&for_stat.loc, other.clone());
             return Err(SemanticError::ForLoopError(err));
         }
     }
@@ -169,7 +170,7 @@ fn check_for_stat<'b, 'a: 'b>(
     match type_check(&for_stat.end_expr, table)? {
         syntax_tree::Kind::Int => {}
         other => {
-            let err = ForLoopError::NonIntegerEnd(other.clone());
+            let err = ForLoopError::new_non_integer_end(&for_stat.loc, other.clone());
             return Err(SemanticError::ForLoopError(err));
         }
     }
@@ -181,7 +182,7 @@ fn check_for_stat<'b, 'a: 'b>(
             Ok(())
         }
         CheckStatus::Failure => {
-            let err = ForLoopError::CountVariableAssignment(&for_stat.id);
+            let err = ForLoopError::new_count_variable_assignment(&for_stat.loc, &for_stat.id);
             Err(SemanticError::ForLoopError(err))
         }
     }
@@ -301,6 +302,7 @@ fn check_expr_list<'a>(
 mod test {
 
     use super::super::name_table::{name_table_factory, VariableTable};
+    use super::super::semantic_error::ForLoopErrorType;
     use super::*;
 
     #[test]
@@ -312,13 +314,13 @@ mod test {
             0,
             0,
         );
-
+        let loc = syntax_tree::Location::new(56, 120);
         let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
         let mut table = table_factory.factory_local_table();
         table
-            .insert_variable(var_name, &syntax_tree::Kind::Int)
+            .insert_variable(var_name, &syntax_tree::Kind::Int, &loc)
             .unwrap();
 
         let mut loop_contex = LoopContext::new();
@@ -333,8 +335,8 @@ mod test {
             check_assign_stat(&stat, &table, &loop_contex),
             Err(
                 SemanticError::ForLoopError(
-                    ForLoopError::CountVariableAssignment(name)))
-                    if name == var_name
+                    ForLoopError {loc: _, error} ))
+                    if matches!(error, ForLoopErrorType::CountVariableAssignment(name) if name == var_name)
         ));
 
         loop_contex.exit_for_loop(var_name);
@@ -448,12 +450,13 @@ mod test {
             syntax_tree::Const::IntConst(9),
         );
 
+        let loc = syntax_tree::Location::new(45, 70);
         let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
         let mut table = table_factory.factory_local_table();
         table
-            .insert_variable(index_var, &syntax_tree::Kind::Int)
+            .insert_variable(index_var, &syntax_tree::Kind::Int, &loc)
             .unwrap();
 
         let mut loop_contex = LoopContext::new();
@@ -470,7 +473,7 @@ mod test {
         );
         let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
         assert!(
-            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError::NonIntegerStart(kind))) if kind == syntax_tree::Kind::Real)
+            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError {loc: _, error})) if matches!(&error, ForLoopErrorType::NonIntegerStart(kind) if kind == &syntax_tree::Kind::Real))
         );
 
         let for_stat = make_for_stat(
@@ -480,7 +483,7 @@ mod test {
         );
         let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
         assert!(
-            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError::NonIntegerEnd(kind))) if kind == syntax_tree::Kind::Real)
+            matches!(stat, Err(SemanticError::ForLoopError(ForLoopError {loc: _, error})) if matches!(&error, ForLoopErrorType::NonIntegerEnd(kind) if kind == &syntax_tree::Kind::Real))
         );
     }
 

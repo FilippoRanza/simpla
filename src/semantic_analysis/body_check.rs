@@ -40,12 +40,12 @@ fn build_lookup_table<'a>(
     table: &mut LocalVariableTable<'a>,
 ) -> Result<(), SemanticError<'a>> {
     for param in &func_decl.params {
-        table.insert_variable(&param.id, &param.kind)?;
+        table.insert_variable(&param.id, &param.kind, &func_decl.loc)?;
     }
 
     for var_decl in &func_decl.vars {
         for var in &var_decl.id_list {
-            table.insert_variable(var, &var_decl.kind)?;
+            table.insert_variable(var, &var_decl.kind, &var_decl.loc)?;
         }
     }
     Ok(())

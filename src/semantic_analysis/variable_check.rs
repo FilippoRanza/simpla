@@ -16,7 +16,7 @@ where
             ));
         }
         for id in &var_decl.id_list {
-            table.insert_variable(id, &var_decl.kind)?;
+            table.insert_variable(id, &var_decl.kind, &var_decl.loc)?;
         }
     }
     Ok(())
@@ -28,7 +28,7 @@ mod test {
     use super::super::name_table::name_table_factory;
     use super::super::semantic_error::Ridefinition;
     use super::*;
-    use simpla_parser::syntax_tree::VarDecl;
+    use simpla_parser::syntax_tree::{Location, VarDecl};
 
     #[test]
     fn test_correct_variable_decl() {
@@ -78,8 +78,8 @@ mod test {
             Err(err) => match err {
                 SemanticError::NameRidefinition(ridef) => {
                     assert_eq!(ridef.name, "a");
-                    assert_eq!(ridef.original, Ridefinition::Variable);
-                    assert_eq!(ridef.new, Ridefinition::Variable);
+                    assert_eq!(ridef.original, Ridefinition::Variable(Location::new(0, 0)));
+                    assert_eq!(ridef.new, Ridefinition::Variable(Location::new(0, 0)));
                 }
                 err => panic!("Wrong error variant: {:?}", err),
             },
