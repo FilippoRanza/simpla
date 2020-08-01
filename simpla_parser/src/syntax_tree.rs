@@ -257,12 +257,6 @@ pub enum ExprTree {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct FactorWrapper {
-    pub loc: Location,
-    pub fact: Factor,
-}
-
-#[derive(PartialEq, Debug)]
 pub enum Factor {
     Id(String),
     UnaryOp(UnaryOp),
