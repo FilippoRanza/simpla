@@ -213,10 +213,13 @@ impl<'a> semantic_error::ArgumentCountError<'a> {
 impl<'a> semantic_error::MismatchedArgumentType<'a> {
     fn format_error(&self, code: &str) -> String {
         format!(
-            "calling function {} argument expected type: {}, found {}",
-            self.func_name,
+            "calling function {} argument expected type: {}, found {} in position {}:\nFunction declaration: {}\nFunction call: {}",
+            self.func.id,
             kind_to_string(&self.correct),
-            kind_to_string(&self.given)
+            kind_to_string(&self.given),
+            (self.index + 1),
+            format_wrong_code(code, &self.func.loc),
+            format_wrong_code(code, &self.loc)
         )
     }
 }

@@ -236,17 +236,21 @@ impl<'a> ArgumentCountError<'a> {
 
 #[derive(Debug, PartialEq)]
 pub struct MismatchedArgumentType<'a> {
-    pub func_name: &'a str,
+    pub func: &'a syntax_tree::FuncDecl,
     pub correct: syntax_tree::Kind,
     pub given: syntax_tree::Kind,
+    pub index: usize,
+    pub loc: &'a syntax_tree::Location
 }
 
 impl<'a> MismatchedArgumentType<'a> {
-    pub fn new(func_name: &'a str, correct: syntax_tree::Kind, given: syntax_tree::Kind) -> Self {
+    pub fn new(func: &'a syntax_tree::FuncDecl, correct: syntax_tree::Kind, given: syntax_tree::Kind, index: usize, loc: &'a syntax_tree::Location) -> Self {
         Self {
-            func_name,
+            func,
             correct,
             given,
+            index,
+            loc
         }
     }
 }

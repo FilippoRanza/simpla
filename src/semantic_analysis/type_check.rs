@@ -196,13 +196,15 @@ fn check_function_call<'a>(
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     let func_proto = table.get_function(&fcall.id)?;
     if func_proto.params.len() == fcall.args.len() {
-        for (formal, actual) in func_proto.params.iter().zip(fcall.args.iter()) {
+        for (i, (formal, actual)) in func_proto.params.iter().zip(fcall.args.iter()).enumerate() {
             let actual_kind = type_check(actual, table)?;
             if actual_kind != formal.kind {
                 let err = SemanticError::MismatchedArgumentType(MismatchedArgumentType::new(
-                    &fcall.id,
+                    func_proto,
                     formal.kind.clone(),
                     actual_kind,
+                    i,
+                    &fcall.loc
                 ));
                 return Err(err);
             }
@@ -284,9 +286,11 @@ mod test {
         check_error_status(
             stat,
             SemanticError::MismatchedArgumentType(MismatchedArgumentType::new(
-                func_name_b,
+                &func_decl_b,
                 Kind::Str,
                 Kind::Int,
+                0,
+                &func_call.loc
             )),
         );
     }
