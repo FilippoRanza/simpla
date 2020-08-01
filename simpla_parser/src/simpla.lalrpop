@@ -192,8 +192,8 @@ UnaryOp: syntax_tree::UnaryOp = {
 }
 
 CondExpr: syntax_tree::CondExpr = {
-    <begin: @L> IfKW <cond: Expr> ThenKW <true_stat: Expr> ElseKW <false_stat: Expr> EndKW <end: @R> 
-        => syntax_tree::CondExpr::new(cond, true_stat, false_stat, begin, end)
+     IfKW <cond: Expr> ThenKW <true_stat: Expr> ElseKW <false_stat: Expr> EndKW 
+        => syntax_tree::CondExpr::new(cond, true_stat, false_stat)
 }
 
 CastExpr: syntax_tree::CastExpr = {

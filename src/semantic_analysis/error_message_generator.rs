@@ -148,7 +148,9 @@ impl<'a> semantic_error::MismatchedUnary<'a> {
         let token = format_wrong_code(code, self.loc);
         match &self.error {
             semantic_error::MismatchedUnaryType::Logic(k) => fmt_err("logic negation", k, token),
-            semantic_error::MismatchedUnaryType::Numeric(k) => fmt_err("arithmetic negation", k, token),
+            semantic_error::MismatchedUnaryType::Numeric(k) => {
+                fmt_err("arithmetic negation", k, token)
+            }
         }
     }
 }

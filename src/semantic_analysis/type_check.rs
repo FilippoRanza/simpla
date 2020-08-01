@@ -91,7 +91,7 @@ fn check_factor<'a>(
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match fact {
         syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table),
-        syntax_tree::Factor::CondExpr(cond) => check_conditional_expression(cond, table),
+        syntax_tree::Factor::CondExpr(cond) => check_conditional_expression(cond, table, loc),
         syntax_tree::Factor::Const(val) => Ok(check_const(val)),
         syntax_tree::Factor::FuncCall(func) => check_function_call(func, table),
         syntax_tree::Factor::HighPrecedence(expr) => type_check(expr, table),
@@ -129,6 +129,7 @@ fn check_cast<'a>(
 fn check_conditional_expression<'a>(
     cond_expr: &'a syntax_tree::CondExpr,
     table: &'a LocalVariableTable,
+    loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     let cond_kind = type_check(&cond_expr.cond, table)?;
     if cond_kind == syntax_tree::Kind::Bool {
@@ -137,11 +138,11 @@ fn check_conditional_expression<'a>(
         if true_kind == false_kind {
             Ok(true_kind)
         } else {
-            let err = MismatchedTypes::new(true_kind, false_kind, &cond_expr.loc);
+            let err = MismatchedTypes::new(true_kind, false_kind, loc);
             Err(SemanticError::MismatchedConditionalExpression(err))
         }
     } else {
-        let err = NonBooleanCondition::new_cond_stat(&cond_expr.loc, cond_kind);
+        let err = NonBooleanCondition::new_cond_stat(loc, cond_kind);
         Err(SemanticError::NonBooleanCondition(err))
     }
 }
@@ -552,14 +553,12 @@ mod test {
                 0,
                 0,
             ),
-            0,
-            0,
         );
 
         let table_factory = table.switch_to_local_table();
         let table = table_factory.factory_local_table();
         assert_eq!(
-            check_conditional_expression(&correct_cond, &table),
+            check_conditional_expression(&correct_cond, &table, &Location::new(0, 0)),
             Ok(Kind::Str)
         );
 
@@ -608,12 +607,10 @@ mod test {
                 234,
             ),
             Expr::new(ExprTree::Factor(Factor::Const(Const::IntConst(41))), 0, 0),
-            0,
-            0,
         );
 
         assert_eq!(
-            check_conditional_expression(&mismatched_cond, &table),
+            check_conditional_expression(&mismatched_cond, &table, &Location::new(0, 0)),
             Err(SemanticError::MismatchedConditionalExpression(
                 MismatchedTypes::new(Kind::Str, Kind::Int, &Location::new(0, 0))
             ))
@@ -668,12 +665,10 @@ mod test {
                 0,
                 0,
             ),
-            0,
-            0,
         );
 
         assert_eq!(
-            check_conditional_expression(&non_bool_cond, &table),
+            check_conditional_expression(&non_bool_cond, &table, &Location::new(0, 0)),
             Err(SemanticError::NonBooleanCondition(
                 NonBooleanCondition::new_cond_stat(&syntax_tree::Location::new(0, 0), Kind::Real)
             ))

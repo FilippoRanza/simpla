@@ -292,16 +292,14 @@ pub struct CondExpr {
     pub cond: Box<Expr>,
     pub true_stat: Box<Expr>,
     pub false_stat: Box<Expr>,
-    pub loc: Location,
 }
 
 impl CondExpr {
-    pub fn new(cond: Expr, true_stat: Expr, false_stat: Expr, begin: usize, end: usize) -> Self {
+    pub fn new(cond: Expr, true_stat: Expr, false_stat: Expr) -> Self {
         Self {
             cond: Box::new(cond),
             true_stat: Box::new(true_stat),
             false_stat: Box::new(false_stat),
-            loc: Location::new(begin, end),
         }
     }
 }
