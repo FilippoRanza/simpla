@@ -78,6 +78,7 @@ mod tests {
                     Box::new(Expr::Factor(Factor::Id("a".to_owned()))),
                     Operator::Greater,
                     Box::new(Expr::Factor(Factor::Const(Const::IntConst(0)))),
+                    Location::new(37, 42)
                 ),
                 vec![Stat::FuncCall(FuncCall::new(
                     "do_stuff".to_owned(),
@@ -87,6 +88,7 @@ mod tests {
                             Box::new(Expr::Factor(Factor::Id("b".to_owned()))),
                             Operator::Add,
                             Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
+                            Location::new(80, 85)
                         ),
                     ],
                     68,
@@ -98,6 +100,7 @@ mod tests {
                         Box::new(Expr::Factor(Factor::Id("a".to_owned()))),
                         Operator::Mul,
                         Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
+                        Location::new(144, 149)
                     )],
                     129,
                     150,
@@ -131,14 +134,17 @@ mod tests {
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(6)))),
                             Operator::Mul,
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(7)))),
+                            Location::new(42, 47)
                         )),
                         Operator::Mul,
                         Box::new(Expr::Factor(Factor::HighPrecedence(Box::new(Expr::Node(
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(8)))),
                             Operator::Add,
                             Box::new(Expr::Factor(Factor::Const(Const::IntConst(9)))),
-                        ))))),
+                            Location::new(51, 56)
+                        ))))), Location::new(42, 57),
                     )),
+                    Location::new(38, 57)
                 ),
                 34,
                 57,
@@ -174,6 +180,9 @@ mod tests {
 
     #[test]
     fn test_useless_brackets() {
+
+        // the displacement is irrelevant to lalrpop, is used just to
+        // get non terminals in the same location
         let code_a = r#"
             body 
                 a = ((((b * next_number(45)))));
@@ -181,7 +190,7 @@ mod tests {
         "#;
         let code_b = r#"
             body
-                a = (b *     next_number(45));
+                a =     (b * next_number(45));
             end.
         "#;
 
@@ -236,9 +245,9 @@ mod tests {
                 )),
                 Stat::AssignStat(AssignStat::new(
                     "b".to_owned(),
-                    Expr::Factor(Factor::CastExpr(CastExpr::Integer(Box::new(Expr::Factor(
-                        Factor::Id("a".to_owned()),
-                    ))))),
+                    Expr::Factor(Factor::CastExpr(CastExpr::new_to_integer(Box::new(Expr::Factor(
+                        Factor::Id("a".to_owned())
+                    )), 64, 74))),
                     60,
                     74,
                 )),
@@ -340,6 +349,7 @@ mod tests {
                                         Box::new(Expr::Factor(Factor::Id("j".to_owned()))),
                                         Operator::Greater,
                                         Box::new(Expr::Factor(Factor::Const(Const::IntConst(0)))),
+                                        Location::new(363, 368)
                                     ),
                                     vec![
                                         Stat::IfStat(IfStat::new(
@@ -352,11 +362,13 @@ mod tests {
                                                     Box::new(Expr::Factor(Factor::Const(
                                                         Const::IntConst(2),
                                                     ))),
+                                                    Location::new(399, 404)
                                                 )),
                                                 Operator::Greater,
                                                 Box::new(Expr::Factor(Factor::Const(
                                                     Const::IntConst(5),
                                                 ))),
+                                                Location::new(399, 408)
                                             ),
                                             vec![Stat::WriteStat(WriteStat::Write(vec![
                                                 Expr::Factor(Factor::Id("d".to_owned())),
@@ -373,6 +385,7 @@ mod tests {
                                                 Box::new(Expr::Factor(Factor::Const(
                                                     Const::IntConst(1),
                                                 ))),
+                                                Location::new(509, 514)
                                             ),
                                             505,
                                             514,
@@ -425,7 +438,7 @@ mod tests {
             end.
         "#;
 
-        let tree = parse_correct_code(code);
+        let _tree = parse_correct_code(code);
     }
 
     #[test]
@@ -453,7 +466,9 @@ mod tests {
                         Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
                         Operator::Add,
                         Box::new(Expr::Factor(Factor::Id("d".to_owned()))),
+                        Location::new(44, 49)
                     ))))),
+                    Location::new(39, 50)
                 )))),
                 34,
                 51,
@@ -461,14 +476,26 @@ mod tests {
         );
         assert_eq!(correct, tree);
 
-        let mut correct = correct;
-        match &mut correct.body[0] {
-            Stat::AssignStat(assign) => {
-                assign.loc.begin = 35;
-                assign.loc.end = 68;
-            }
-            _ => panic!(),
-        }
+        let correct = Program::new(
+            vec![],
+            vec![],
+            vec![Stat::AssignStat(AssignStat::new(
+                "a".to_owned(),
+                Expr::Factor(Factor::HighPrecedence(Box::new(Expr::Node(
+                    Box::new(Expr::Factor(Factor::Id("b".to_owned()))),
+                    Operator::Mul,
+                    Box::new(Expr::Factor(Factor::HighPrecedence(Box::new(Expr::Node(
+                        Box::new(Expr::Factor(Factor::Id("c".to_owned()))),
+                        Operator::Add,
+                        Box::new(Expr::Factor(Factor::Id("d".to_owned()))),
+                        Location::new(53, 58)
+                    ))))),
+                    Location::new(44, 63)
+                )))),
+                35,
+                68,
+            ))],
+        );
 
         let code = r"#
             body
