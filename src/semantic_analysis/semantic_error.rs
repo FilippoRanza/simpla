@@ -11,7 +11,7 @@ pub enum SemanticError<'a> {
     MismatchedConditionalExpression(MismatchedTypes<'a>),
     UnknownFunction(&'a str),
     UnknownVariable(&'a str),
-    MismatchedUnary(MismatchedUnary),
+    MismatchedUnary(MismatchedUnary<'a>),
     ArgumentCountError(ArgumentCountError<'a>),
     MismatchedArgumentType(MismatchedArgumentType<'a>),
     MismatchedAssignment(MismatchedAssignment<'a>),
@@ -147,7 +147,25 @@ pub enum NonBooleanConditionType {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum MismatchedUnary {
+pub struct MismatchedUnary<'a> {
+    pub loc: &'a syntax_tree::Location,
+    pub error: MismatchedUnaryType,
+}
+
+impl<'a> MismatchedUnary<'a> {
+    pub fn new_logic(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = MismatchedUnaryType::Logic(kind);
+        Self { loc, error }
+    }
+
+    pub fn new_numeric(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
+        let error = MismatchedUnaryType::Logic(kind);
+        Self { loc, error }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum MismatchedUnaryType {
     Logic(syntax_tree::Kind),
     Numeric(syntax_tree::Kind),
 }

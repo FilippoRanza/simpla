@@ -24,7 +24,7 @@ pub fn type_check<'a>(
             let output = coherent_operation(left_type, op, right_type, &expr.loc)?;
             Ok(output)
         }
-        syntax_tree::ExprTree::Factor(fact) => check_factor(fact, table),
+        syntax_tree::ExprTree::Factor(fact) => check_factor(fact, table, &expr.loc),
     }
 }
 
@@ -87,6 +87,7 @@ fn coherent_operation<'a>(
 fn check_factor<'a>(
     fact: &'a syntax_tree::Factor,
     table: &'a LocalVariableTable,
+    loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match fact {
         syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table),
@@ -95,7 +96,7 @@ fn check_factor<'a>(
         syntax_tree::Factor::FuncCall(func) => check_function_call(func, table),
         syntax_tree::Factor::HighPrecedence(expr) => type_check(expr, table),
         syntax_tree::Factor::Id(name) => check_id(name, table),
-        syntax_tree::Factor::UnaryOp(unary) => check_unary_operator(unary, table),
+        syntax_tree::Factor::UnaryOp(unary) => check_unary_operator(unary, table, loc),
     }
 }
 
@@ -167,24 +168,27 @@ fn check_id<'a>(
 fn check_unary_operator<'a>(
     unary: &'a syntax_tree::UnaryOp,
     table: &'a LocalVariableTable,
+    loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match unary {
         syntax_tree::UnaryOp::Minus(fact) => {
-            let kind = check_factor(fact, table)?;
+            let kind = check_factor(fact, table, loc)?;
             match kind {
                 syntax_tree::Kind::Int => Ok(syntax_tree::Kind::Int),
                 syntax_tree::Kind::Real => Ok(syntax_tree::Kind::Real),
-                other => Err(SemanticError::MismatchedUnary(MismatchedUnary::Numeric(
-                    other,
-                ))),
+                other => Err(SemanticError::MismatchedUnary(
+                    MismatchedUnary::new_numeric(loc, other),
+                )),
             }
         }
         syntax_tree::UnaryOp::Negate(fact) => {
-            let kind = check_factor(fact, table)?;
+            let kind = check_factor(fact, table, loc)?;
             if kind == syntax_tree::Kind::Bool {
                 Ok(syntax_tree::Kind::Bool)
             } else {
-                Err(SemanticError::MismatchedUnary(MismatchedUnary::Logic(kind)))
+                Err(SemanticError::MismatchedUnary(MismatchedUnary::new_logic(
+                    loc, kind,
+                )))
             }
         }
     }
@@ -426,11 +430,11 @@ mod test {
             UnaryOp::Negate(Box::new(Factor::HighPrecedence(correct_boolean_expr)));
 
         assert_eq!(
-            check_unary_operator(&correct_numeric_unary, &table),
+            check_unary_operator(&correct_numeric_unary, &table, &Location::new(0, 0)),
             Ok(Kind::Int)
         );
         assert_eq!(
-            check_unary_operator(&correct_boolean_unary, &table),
+            check_unary_operator(&correct_boolean_unary, &table, &Location::new(0, 0)),
             Ok(Kind::Bool)
         );
 
@@ -441,15 +445,16 @@ mod test {
         let wrong_boolean_unary = UnaryOp::Negate(correct_numeric_expr);
 
         assert_eq!(
-            check_unary_operator(&wrong_numertic_unary, &table),
-            Err(SemanticError::MismatchedUnary(MismatchedUnary::Numeric(
-                Kind::Bool
-            )))
+            check_unary_operator(&wrong_numertic_unary, &table, &Location::new(0, 0)),
+            Err(SemanticError::MismatchedUnary(
+                MismatchedUnary::new_numeric(&Location::new(0, 0), syntax_tree::Kind::Bool)
+            ))
         );
 
         assert_eq!(
-            check_unary_operator(&wrong_boolean_unary, &table),
-            Err(SemanticError::MismatchedUnary(MismatchedUnary::Logic(
+            check_unary_operator(&wrong_boolean_unary, &table, &Location::new(0, 0)),
+            Err(SemanticError::MismatchedUnary(MismatchedUnary::new_logic(
+                &Location::new(0, 0),
                 Kind::Int
             )))
         );

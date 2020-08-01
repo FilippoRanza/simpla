@@ -135,18 +135,20 @@ impl<'a> semantic_error::NonBooleanCondition<'a> {
         }
     }
 }
-impl semantic_error::MismatchedUnary {
+impl<'a> semantic_error::MismatchedUnary<'a> {
     fn format_error(&self, code: &str) -> String {
-        fn fmt_err(unary: &str, kind: &syntax_tree::Kind) -> String {
+        fn fmt_err(unary: &str, kind: &syntax_tree::Kind, err: String) -> String {
             format!(
-                "{} cannot be applied to type: {}",
+                "{} cannot be applied to type: {}\n{}",
                 unary,
-                kind_to_string(kind)
+                kind_to_string(kind),
+                err
             )
         }
-        match self {
-            Self::Logic(k) => fmt_err("logic negation", k),
-            Self::Numeric(k) => fmt_err("arithmetic negation", k),
+        let token = format_wrong_code(code, self.loc);
+        match &self.error {
+            semantic_error::MismatchedUnaryType::Logic(k) => fmt_err("logic negation", k, token),
+            semantic_error::MismatchedUnaryType::Numeric(k) => fmt_err("arithmetic negation", k, token),
         }
     }
 }
