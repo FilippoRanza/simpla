@@ -236,15 +236,30 @@ impl FuncCall {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum Expr {
-    Node(Box<Expr>, Operator, Box<Expr>, Location),
+pub struct Expr {
+    pub loc: Location,
+    pub expr: ExprTree,
+}
+
+impl Expr {
+    pub fn new(expr: ExprTree, begin: usize, end: usize) -> Self {
+        Self {
+            expr,
+            loc: Location::new(begin, end),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum ExprTree {
+    Node(Box<Expr>, Operator, Box<Expr>),
     Factor(Factor),
 }
 
 #[derive(PartialEq, Debug)]
 pub struct FactorWrapper {
     pub loc: Location,
-    pub fact: Factor
+    pub fact: Factor,
 }
 
 #[derive(PartialEq, Debug)]
@@ -294,21 +309,21 @@ impl CondExpr {
 #[derive(PartialEq, Debug)]
 pub struct CastExpr {
     pub loc: Location,
-    pub expr: CastExprType
+    pub expr: CastExprType,
 }
 
 impl CastExpr {
     pub fn new_to_integer(expr: Box<Expr>, begin: usize, end: usize) -> Self {
         Self {
             expr: CastExprType::Integer(expr),
-            loc : Location::new(begin, end)
+            loc: Location::new(begin, end),
         }
     }
 
     pub fn new_to_real(expr: Box<Expr>, begin: usize, end: usize) -> Self {
         Self {
             expr: CastExprType::Real(expr),
-            loc : Location::new(begin, end)
+            loc: Location::new(begin, end),
         }
     }
 }

@@ -17,14 +17,14 @@ pub fn type_check<'a>(
     expr: &'a syntax_tree::Expr,
     table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
-    match expr {
-        syntax_tree::Expr::Node(left, op, right, loc) => {
+    match &expr.expr {
+        syntax_tree::ExprTree::Node(left, op, right) => {
             let left_type = type_check(left, table)?;
             let right_type = type_check(right, table)?;
-            let output = coherent_operation(left_type, op, right_type, loc)?;
+            let output = coherent_operation(left_type, op, right_type, &expr.loc)?;
             Ok(output)
         }
-        syntax_tree::Expr::Factor(fact) => check_factor(fact, table),
+        syntax_tree::ExprTree::Factor(fact) => check_factor(fact, table),
     }
 }
 
@@ -204,7 +204,7 @@ fn check_function_call<'a>(
                     formal.kind.clone(),
                     actual_kind,
                     i,
-                    &fcall.loc
+                    &fcall.loc,
                 ));
                 return Err(err);
             }
@@ -266,7 +266,11 @@ mod test {
 
         let func_call = FuncCall::new(
             func_name_a.to_owned(),
-            vec![Expr::Factor(Factor::Id(var_name.to_owned()))],
+            vec![Expr::new(
+                ExprTree::Factor(Factor::Id(var_name.to_owned())),
+                0,
+                0,
+            )],
             0,
             0,
         );
@@ -278,7 +282,11 @@ mod test {
 
         let func_call = FuncCall::new(
             func_name_b.to_owned(),
-            vec![Expr::Factor(Factor::Id(var_name.to_owned()))],
+            vec![Expr::new(
+                ExprTree::Factor(Factor::Id(var_name.to_owned())),
+                0,
+                0,
+            )],
             0,
             0,
         );
@@ -290,7 +298,7 @@ mod test {
                 Kind::Str,
                 Kind::Int,
                 0,
-                &func_call.loc
+                &func_call.loc,
             )),
         );
     }
@@ -313,12 +321,20 @@ mod test {
         let table = table_factory.factory_local_table();
 
         let correct_real_cast = CastExpr::new_to_real(
-            Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+            Box::new(Expr::new(
+                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+                0,
+                0,
+            )),
             123,
             456,
         );
         let correct_int_cast = CastExpr::new_to_integer(
-            Box::new(Expr::Factor(Factor::Id(float_var_name.to_owned()))),
+            Box::new(Expr::new(
+                ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
+                0,
+                0,
+            )),
             234,
             567,
         );
@@ -327,12 +343,20 @@ mod test {
         assert_eq!(check_cast(&correct_int_cast, &table), Ok(Kind::Int));
 
         let wrong_int_cast = CastExpr::new_to_integer(
-            Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
+            Box::new(Expr::new(
+                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+                0,
+                0,
+            )),
             123,
             456,
         );
         let wrong_real_cast = CastExpr::new_to_real(
-            Box::new(Expr::Factor(Factor::Id(float_var_name.to_owned()))),
+            Box::new(Expr::new(
+                ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
+                0,
+                0,
+            )),
             234,
             567,
         );
@@ -361,17 +385,39 @@ mod test {
 
         let table = table_factory.factory_local_table();
 
-        let correct_numeric_expr = Box::new(Expr::Node(
-            Box::new(Expr::Factor(Factor::Const(Const::IntConst(4)))),
-            Operator::Add,
-            Box::new(Expr::Factor(Factor::Const(Const::IntConst(12)))),
-            Location::new(0, 10),
+        let correct_numeric_expr = Box::new(Expr::new(
+            ExprTree::Node(
+                Box::new(Expr::new(
+                    ExprTree::Factor(Factor::Const(Const::IntConst(4))),
+                    0,
+                    0,
+                )),
+                Operator::Add,
+                Box::new(Expr::new(
+                    ExprTree::Factor(Factor::Const(Const::IntConst(12))),
+                    0,
+                    0,
+                )),
+            ),
+            0,
+            10,
         ));
-        let correct_boolean_expr = Box::new(Expr::Node(
-            Box::new(Expr::Factor(Factor::Const(Const::BoolConst(false)))),
-            Operator::Or,
-            Box::new(Expr::Factor(Factor::Const(Const::BoolConst(true)))),
-            Location::new(15, 25),
+        let correct_boolean_expr = Box::new(Expr::new(
+            ExprTree::Node(
+                Box::new(Expr::new(
+                    ExprTree::Factor(Factor::Const(Const::BoolConst(false))),
+                    0,
+                    0,
+                )),
+                Operator::Or,
+                Box::new(Expr::new(
+                    ExprTree::Factor(Factor::Const(Const::BoolConst(true))),
+                    0,
+                    0,
+                )),
+            ),
+            0,
+            0,
         ));
 
         let correct_numeric_unary =
@@ -453,24 +499,54 @@ mod test {
         table.insert_function(void_func_name, &void_func).unwrap();
 
         let correct_cond = CondExpr::new(
-            Expr::Node(
-                Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
-                Operator::Greater,
-                Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
-                Location::new(10, 15),
+            Expr::new(
+                ExprTree::Node(
+                    Box::new(Expr::new(
+                        ExprTree::Factor(Factor::Id(real_var_name.to_owned())),
+                        0,
+                        0,
+                    )),
+                    Operator::Greater,
+                    Box::new(Expr::new(
+                        ExprTree::Factor(Factor::Const(Const::RealConst(4.5))),
+                        0,
+                        0,
+                    )),
+                ),
+                10,
+                15,
             ),
-            Expr::Factor(Factor::FuncCall(FuncCall::new(
-                str_func_name.to_owned(),
-                vec![Expr::Node(
-                    Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
-                    Operator::Mul,
-                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
-                    Location::new(56, 156),
-                )],
+            Expr::new(
+                ExprTree::Factor(Factor::FuncCall(FuncCall::new(
+                    str_func_name.to_owned(),
+                    vec![Expr::new(
+                        ExprTree::Node(
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+                                0,
+                                0,
+                            )),
+                            Operator::Mul,
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Const(Const::IntConst(21))),
+                                0,
+                                0,
+                            )),
+                        ),
+                        56,
+                        156,
+                    )],
+                    0,
+                    0,
+                ))),
                 0,
                 0,
-            ))),
-            Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+            ),
+            Expr::new(
+                ExprTree::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+                0,
+                0,
+            ),
             0,
             0,
         );
@@ -483,24 +559,50 @@ mod test {
         );
 
         let mismatched_cond = CondExpr::new(
-            Expr::Node(
-                Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
-                Operator::Greater,
-                Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
-                Location::new(56, 125),
+            Expr::new(
+                ExprTree::Node(
+                    Box::new(Expr::new(
+                        ExprTree::Factor(Factor::Id(real_var_name.to_owned())),
+                        0,
+                        0,
+                    )),
+                    Operator::Greater,
+                    Box::new(Expr::new(
+                        ExprTree::Factor(Factor::Const(Const::RealConst(4.5))),
+                        0,
+                        0,
+                    )),
+                ),
+                56,
+                125,
             ),
-            Expr::Factor(Factor::FuncCall(FuncCall::new(
-                str_func_name.to_owned(),
-                vec![Expr::Node(
-                    Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
-                    Operator::Mul,
-                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
-                    Location::new(156, 234),
-                )],
-                0,
-                0,
-            ))),
-            Expr::Factor(Factor::Const(Const::IntConst(41))),
+            Expr::new(
+                ExprTree::Factor(Factor::FuncCall(FuncCall::new(
+                    str_func_name.to_owned(),
+                    vec![Expr::new(
+                        ExprTree::Node(
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+                                0,
+                                0,
+                            )),
+                            Operator::Mul,
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Const(Const::IntConst(21))),
+                                0,
+                                0,
+                            )),
+                        ),
+                        0,
+                        0,
+                    )],
+                    0,
+                    0,
+                ))),
+                156,
+                234,
+            ),
+            Expr::new(ExprTree::Factor(Factor::Const(Const::IntConst(41))), 0, 0),
             0,
             0,
         );
@@ -513,24 +615,54 @@ mod test {
         );
 
         let non_bool_cond = CondExpr::new(
-            Expr::Node(
-                Box::new(Expr::Factor(Factor::Id(real_var_name.to_owned()))),
-                Operator::Add,
-                Box::new(Expr::Factor(Factor::Const(Const::RealConst(4.5)))),
-                Location::new(10, 24),
+            Expr::new(
+                ExprTree::Node(
+                    Box::new(Expr::new(
+                        ExprTree::Factor(Factor::Id(real_var_name.to_owned())),
+                        0,
+                        0,
+                    )),
+                    Operator::Add,
+                    Box::new(Expr::new(
+                        ExprTree::Factor(Factor::Const(Const::RealConst(4.5))),
+                        0,
+                        0,
+                    )),
+                ),
+                10,
+                24,
             ),
-            Expr::Factor(Factor::FuncCall(FuncCall::new(
-                str_func_name.to_owned(),
-                vec![Expr::Node(
-                    Box::new(Expr::Factor(Factor::Id(int_var_name.to_owned()))),
-                    Operator::Mul,
-                    Box::new(Expr::Factor(Factor::Const(Const::IntConst(21)))),
-                    Location::new(56, 100),
-                )],
+            Expr::new(
+                ExprTree::Factor(Factor::FuncCall(FuncCall::new(
+                    str_func_name.to_owned(),
+                    vec![Expr::new(
+                        ExprTree::Node(
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+                                0,
+                                0,
+                            )),
+                            Operator::Mul,
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Const(Const::IntConst(21))),
+                                0,
+                                0,
+                            )),
+                        ),
+                        56,
+                        100,
+                    )],
+                    0,
+                    0,
+                ))),
+                56,
+                100,
+            ),
+            Expr::new(
+                ExprTree::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
                 0,
                 0,
-            ))),
-            Expr::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+            ),
             0,
             0,
         );

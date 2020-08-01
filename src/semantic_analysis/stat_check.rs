@@ -315,7 +315,13 @@ mod test {
         let var_name = "test";
         let stat = syntax_tree::AssignStat::new(
             var_name.to_owned(),
-            syntax_tree::Expr::Factor(syntax_tree::Factor::Const(syntax_tree::Const::IntConst(7))),
+            syntax_tree::Expr::new(
+                syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(
+                    syntax_tree::Const::IntConst(7),
+                )),
+                0,
+                0,
+            ),
             0,
             0,
         );
@@ -349,9 +355,13 @@ mod test {
 
         let stat = syntax_tree::AssignStat::new(
             var_name.to_owned(),
-            syntax_tree::Expr::Factor(syntax_tree::Factor::Const(syntax_tree::Const::RealConst(
-                7.5,
-            ))),
+            syntax_tree::Expr::new(
+                syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(
+                    syntax_tree::Const::RealConst(7.5),
+                )),
+                0,
+                0,
+            ),
             0,
             0,
         );
@@ -402,9 +412,13 @@ mod test {
 
     #[test]
     fn test_check_return_stat() {
-        let return_stat = Some(syntax_tree::Expr::Factor(syntax_tree::Factor::Const(
-            syntax_tree::Const::RealConst(2.3),
-        )));
+        let return_stat = Some(syntax_tree::Expr::new(
+            syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(
+                syntax_tree::Const::RealConst(2.3),
+            )),
+            0,
+            0,
+        ));
         let func_decl = syntax_tree::FuncDecl::new(
             "func_name".to_owned(),
             vec![],
@@ -543,11 +557,14 @@ mod test {
 
     fn make_while_stat(op: syntax_tree::Operator) -> syntax_tree::WhileStat {
         syntax_tree::WhileStat::new(
-            syntax_tree::Expr::Node(
-                Box::new(make_constant_expr(syntax_tree::Const::RealConst(7.8))),
-                op,
-                Box::new(make_constant_expr(syntax_tree::Const::RealConst(6.8))),
-                syntax_tree::Location::new(0, 0),
+            syntax_tree::Expr::new(
+                syntax_tree::ExprTree::Node(
+                    Box::new(make_constant_expr(syntax_tree::Const::RealConst(7.8))),
+                    op,
+                    Box::new(make_constant_expr(syntax_tree::Const::RealConst(6.8))),
+                ),
+                0,
+                0,
             ),
             vec![],
             0,
@@ -556,6 +573,10 @@ mod test {
     }
 
     fn make_constant_expr(const_val: syntax_tree::Const) -> syntax_tree::Expr {
-        syntax_tree::Expr::Factor(syntax_tree::Factor::Const(const_val))
+        syntax_tree::Expr::new(
+            syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(const_val)),
+            0,
+            0,
+        )
     }
 }

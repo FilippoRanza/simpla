@@ -240,17 +240,23 @@ pub struct MismatchedArgumentType<'a> {
     pub correct: syntax_tree::Kind,
     pub given: syntax_tree::Kind,
     pub index: usize,
-    pub loc: &'a syntax_tree::Location
+    pub loc: &'a syntax_tree::Location,
 }
 
 impl<'a> MismatchedArgumentType<'a> {
-    pub fn new(func: &'a syntax_tree::FuncDecl, correct: syntax_tree::Kind, given: syntax_tree::Kind, index: usize, loc: &'a syntax_tree::Location) -> Self {
+    pub fn new(
+        func: &'a syntax_tree::FuncDecl,
+        correct: syntax_tree::Kind,
+        given: syntax_tree::Kind,
+        index: usize,
+        loc: &'a syntax_tree::Location,
+    ) -> Self {
         Self {
             func,
             correct,
             given,
             index,
-            loc
+            loc,
         }
     }
 }
