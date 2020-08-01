@@ -90,7 +90,7 @@ fn check_factor<'a>(
     loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match fact {
-        syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table),
+        syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table, loc),
         syntax_tree::Factor::CondExpr(cond) => check_conditional_expression(cond, table, loc),
         syntax_tree::Factor::Const(val) => Ok(check_const(val)),
         syntax_tree::Factor::FuncCall(func) => check_function_call(func, table),
@@ -103,23 +103,24 @@ fn check_factor<'a>(
 fn check_cast<'a>(
     cast: &'a syntax_tree::CastExpr,
     table: &'a LocalVariableTable,
+    loc: &'a syntax_tree::Location
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
-    match &cast.expr {
-        syntax_tree::CastExprType::Integer(expr) => {
+    match cast {
+        syntax_tree::CastExpr::Integer(expr) => {
             let kind = type_check(expr, table)?;
             if kind == syntax_tree::Kind::Real {
                 Ok(syntax_tree::Kind::Int)
             } else {
-                let err = SemanticError::CastError(CastError::new_to_int(&cast.loc, kind));
+                let err = SemanticError::CastError(CastError::new_to_int(loc, kind));
                 Err(err)
             }
         }
-        syntax_tree::CastExprType::Real(expr) => {
+        syntax_tree::CastExpr::Real(expr) => {
             let kind = type_check(expr, table)?;
             if kind == syntax_tree::Kind::Int {
                 Ok(syntax_tree::Kind::Real)
             } else {
-                let err = SemanticError::CastError(CastError::new_to_real(&cast.loc, kind));
+                let err = SemanticError::CastError(CastError::new_to_real(loc, kind));
                 Err(err)
             }
         }
@@ -325,56 +326,49 @@ mod test {
         let table_factory = table.switch_to_function_table().switch_to_local_table();
         let table = table_factory.factory_local_table();
 
-        let correct_real_cast = CastExpr::new_to_real(
+        let correct_real_cast = CastExpr::Real(
             Box::new(Expr::new(
                 ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
                 0,
                 0,
             )),
-            123,
-            456,
         );
-        let correct_int_cast = CastExpr::new_to_integer(
+        let correct_int_cast = CastExpr::Integer(
             Box::new(Expr::new(
                 ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
                 0,
                 0,
             )),
-            234,
-            567,
+
         );
 
-        assert_eq!(check_cast(&correct_real_cast, &table), Ok(Kind::Real));
-        assert_eq!(check_cast(&correct_int_cast, &table), Ok(Kind::Int));
+        assert_eq!(check_cast(&correct_real_cast, &table, &Location::new(0, 0)), Ok(Kind::Real));
+        assert_eq!(check_cast(&correct_int_cast, &table, &Location::new(0, 0)), Ok(Kind::Int));
 
-        let wrong_int_cast = CastExpr::new_to_integer(
+        let wrong_int_cast = CastExpr::Integer(
             Box::new(Expr::new(
                 ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
                 0,
                 0,
             )),
-            123,
-            456,
         );
-        let wrong_real_cast = CastExpr::new_to_real(
+        let wrong_real_cast = CastExpr::Real(
             Box::new(Expr::new(
                 ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
                 0,
                 0,
             )),
-            234,
-            567,
         );
 
         assert_eq!(
-            check_cast(&wrong_int_cast, &table),
+            check_cast(&wrong_int_cast, &table, &loc_int),
             Err(SemanticError::CastError(CastError::new_to_int(
                 &loc_int,
                 Kind::Int
             )))
         );
         assert_eq!(
-            check_cast(&wrong_real_cast, &table),
+            check_cast(&wrong_real_cast, &table, &loc_real),
             Err(SemanticError::CastError(CastError::new_to_real(
                 &loc_real,
                 Kind::Real

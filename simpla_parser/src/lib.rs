@@ -319,14 +319,12 @@ mod tests {
                 Stat::AssignStat(AssignStat::new(
                     "b".to_owned(),
                     Expr::new(
-                        ExprTree::Factor(Factor::CastExpr(CastExpr::new_to_integer(
+                        ExprTree::Factor(Factor::CastExpr(CastExpr::Integer(
                             Box::new(Expr::new(
                                 ExprTree::Factor(Factor::Id("a".to_owned())),
                                 72,
                                 73,
                             )),
-                            64,
-                            74,
                         ))),
                         64,
                         74,

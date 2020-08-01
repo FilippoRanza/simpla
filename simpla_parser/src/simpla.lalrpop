@@ -197,8 +197,8 @@ CondExpr: syntax_tree::CondExpr = {
 }
 
 CastExpr: syntax_tree::CastExpr = {
-    <begin: @L> IntegerKW OpenBracketPunct <e: Expr> CloseBracketPunct <end: @R> => syntax_tree::CastExpr::new_to_integer(Box::new(e), begin, end),
-    <begin: @L> RealKW OpenBracketPunct <e: Expr> CloseBracketPunct <end: @R> => syntax_tree::CastExpr::new_to_real(Box::new(e), begin, end),
+    IntegerKW OpenBracketPunct <e: Expr> CloseBracketPunct  => syntax_tree::CastExpr::Integer(Box::new(e)),
+    RealKW OpenBracketPunct <e: Expr> CloseBracketPunct  => syntax_tree::CastExpr::Real(Box::new(e)),
 }
 
 ConstFactor: syntax_tree::Const = {
