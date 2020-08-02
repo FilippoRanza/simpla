@@ -210,7 +210,7 @@ impl<'a> semantic_error::ArgumentCountError<'a> {
             self.func_decl.params.len(),
             self.func_call.args.len(),
             format_wrong_code(code, &self.func_decl.loc),
-            format_wrong_code(code, &self.func_call.loc)
+            format_wrong_code(code, &self.func_decl.loc)
         )
     }
 }

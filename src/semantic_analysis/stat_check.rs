@@ -27,22 +27,22 @@ fn stat_check<'b, 'a: 'b>(
     contex: &Contex,
     loop_contex: &mut LoopContext<'b>,
 ) -> Result<(), SemanticError<'a>> {
-    match stat {
-        syntax_tree::Stat::AssignStat(assign_stat) => {
-            check_assign_stat(assign_stat, table, loop_contex)
+    match &stat.stat {
+        syntax_tree::StatType::AssignStat(assign_stat) => {
+            check_assign_stat(assign_stat, table, loop_contex, &stat.loc)
         }
-        syntax_tree::Stat::Break => check_break_stat(loop_contex),
-        syntax_tree::Stat::ForStat(for_stat) => {
-            check_for_stat(for_stat, table, contex, loop_contex)
+        syntax_tree::StatType::Break => check_break_stat(loop_contex),
+        syntax_tree::StatType::ForStat(for_stat) => {
+            check_for_stat(for_stat, table, contex, loop_contex, &stat.loc)
         }
-        syntax_tree::Stat::FuncCall(func_call) => function_call_check(func_call, table),
-        syntax_tree::Stat::IfStat(if_stat) => check_if_stat(if_stat, table, contex, loop_contex),
-        syntax_tree::Stat::ReadStat(read_stat) => check_read_stat(read_stat, table),
-        syntax_tree::Stat::ReturnStat(return_stat) => check_return_stat(return_stat, table, contex),
-        syntax_tree::Stat::WhileStat(while_stat) => {
-            check_while_stat(while_stat, table, contex, loop_contex)
+        syntax_tree::StatType::FuncCall(func_call) => function_call_check(func_call, table, &stat.loc),
+        syntax_tree::StatType::IfStat(if_stat) => check_if_stat(if_stat, table, contex, loop_contex, &stat.loc),
+        syntax_tree::StatType::ReadStat(read_stat) => check_read_stat(read_stat, table),
+        syntax_tree::StatType::ReturnStat(return_stat) => check_return_stat(return_stat, table, contex),
+        syntax_tree::StatType::WhileStat(while_stat) => {
+            check_while_stat(while_stat, table, contex, loop_contex, &stat.loc)
         }
-        syntax_tree::Stat::WriteStat(write_stat) => check_write_stat(write_stat, table),
+        syntax_tree::StatType::WriteStat(write_stat) => check_write_stat(write_stat, table),
     }
 }
 
@@ -120,6 +120,7 @@ fn check_assign_stat<'b, 'a: 'b>(
     assign_stat: &'a syntax_tree::AssignStat,
     table: &'a LocalVariableTable,
     contex: &LoopContext<'b>,
+    loc: &'a syntax_tree::Location
 ) -> Result<(), SemanticError<'a>> {
     let right_kind = type_check(&assign_stat.expr, table)?;
     let left_kind = table.get_variable(&assign_stat.id)?;
@@ -128,7 +129,7 @@ fn check_assign_stat<'b, 'a: 'b>(
             CheckStatus::Success => Ok(()),
             CheckStatus::Failure => {
                 let err =
-                    ForLoopError::new_count_variable_assignment(&assign_stat.loc, &assign_stat.id);
+                    ForLoopError::new_count_variable_assignment(loc, &assign_stat.id);
                 Err(SemanticError::ForLoopError(err))
             }
         }
@@ -137,7 +138,7 @@ fn check_assign_stat<'b, 'a: 'b>(
             &assign_stat.id,
             left_kind.clone(),
             right_kind,
-            &assign_stat.loc,
+            loc,
         );
         Err(SemanticError::MismatchedAssignment(err))
     }
@@ -155,11 +156,12 @@ fn check_for_stat<'b, 'a: 'b>(
     table: &'a LocalVariableTable,
     block_contex: &Contex,
     loop_contex: &mut LoopContext<'b>,
+    loc: &'a syntax_tree::Location
 ) -> Result<(), SemanticError<'a>> {
     match table.get_variable(&for_stat.id)? {
         syntax_tree::Kind::Int => {}
         other => {
-            let err = ForLoopError::new_non_integer_count(&for_stat.loc, other.clone());
+            let err = ForLoopError::new_non_integer_count(loc, other.clone());
             return Err(SemanticError::ForLoopError(err));
         }
     }
@@ -167,7 +169,7 @@ fn check_for_stat<'b, 'a: 'b>(
     match type_check(&for_stat.begin_expr, table)? {
         syntax_tree::Kind::Int => {}
         other => {
-            let err = ForLoopError::new_non_integer_start(&for_stat.loc, other.clone());
+            let err = ForLoopError::new_non_integer_start(loc, other.clone());
             return Err(SemanticError::ForLoopError(err));
         }
     }
@@ -175,7 +177,7 @@ fn check_for_stat<'b, 'a: 'b>(
     match type_check(&for_stat.end_expr, table)? {
         syntax_tree::Kind::Int => {}
         other => {
-            let err = ForLoopError::new_non_integer_end(&for_stat.loc, other.clone());
+            let err = ForLoopError::new_non_integer_end(loc, other.clone());
             return Err(SemanticError::ForLoopError(err));
         }
     }
@@ -187,7 +189,7 @@ fn check_for_stat<'b, 'a: 'b>(
             Ok(())
         }
         CheckStatus::Failure => {
-            let err = ForLoopError::new_count_variable_assignment(&for_stat.loc, &for_stat.id);
+            let err = ForLoopError::new_count_variable_assignment(loc, &for_stat.id);
             Err(SemanticError::ForLoopError(err))
         }
     }
@@ -198,6 +200,7 @@ fn check_if_stat<'b, 'a: 'b>(
     table: &'a LocalVariableTable,
     block_contex: &Contex,
     loop_contex: &mut LoopContext<'b>,
+    loc: &'a syntax_tree::Location
 ) -> Result<(), SemanticError<'a>> {
     match type_check(&if_stat.cond, table)? {
         syntax_tree::Kind::Bool => {
@@ -208,7 +211,7 @@ fn check_if_stat<'b, 'a: 'b>(
             Ok(())
         }
         other => {
-            let err = NonBooleanCondition::new_if_stat(&if_stat.loc, other.clone());
+            let err = NonBooleanCondition::new_if_stat(loc, other.clone());
             Err(SemanticError::NonBooleanCondition(err))
         }
     }
@@ -268,6 +271,7 @@ fn check_while_stat<'b, 'a: 'b>(
     table: &'a LocalVariableTable,
     block_contex: &Contex,
     loop_contex: &mut LoopContext<'b>,
+    loc: &'a syntax_tree::Location
 ) -> Result<(), SemanticError<'a>> {
     match type_check(&while_stat.cond, table)? {
         syntax_tree::Kind::Bool => {
@@ -277,7 +281,7 @@ fn check_while_stat<'b, 'a: 'b>(
             Ok(())
         }
         other => {
-            let err = NonBooleanCondition::new_while_stat(&while_stat.loc, other.clone());
+            let err = NonBooleanCondition::new_while_stat(loc, other.clone());
             Err(SemanticError::NonBooleanCondition(err))
         }
     }
@@ -322,8 +326,8 @@ mod test {
                 0,
                 0,
             ),
-            0,
-            0,
+            
+    
         );
         let loc = syntax_tree::Location::new(56, 120);
         let table_factory = name_table_factory()
@@ -336,14 +340,14 @@ mod test {
 
         let mut loop_contex = LoopContext::new();
 
-        check_assign_stat(&stat, &table, &loop_contex).unwrap();
+        check_assign_stat(&stat, &table, &loop_contex, &syntax_tree::Location::new(0, 0)).unwrap();
         assert!(matches!(
             loop_contex.enter_for_loop(var_name),
             CheckStatus::Success
         ));
 
         assert!(matches!(
-            check_assign_stat(&stat, &table, &loop_contex),
+            check_assign_stat(&stat, &table, &loop_contex, &syntax_tree::Location::new(0, 0)),
             Err(
                 SemanticError::ForLoopError(
                     ForLoopError {loc: _, error} ))
@@ -351,7 +355,7 @@ mod test {
         ));
 
         loop_contex.exit_for_loop(var_name);
-        check_assign_stat(&stat, &table, &loop_contex).unwrap();
+        check_assign_stat(&stat, &table, &loop_contex,&syntax_tree::Location::new(0, 0)).unwrap();
 
         let stat = syntax_tree::AssignStat::new(
             var_name.to_owned(),
@@ -362,13 +366,12 @@ mod test {
                 0,
                 0,
             ),
-            0,
-            0,
+            
         );
 
         assert!(
             matches!(
-                    check_assign_stat(&stat, &table, &loop_contex),
+                    check_assign_stat(&stat, &table, &loop_contex, &syntax_tree::Location::new(0, 0)),
                     Err(SemanticError::MismatchedAssignment(mistmatch))
                     if mistmatch == MismatchedAssignment::new(var_name, syntax_tree::Kind::Int, syntax_tree::Kind::Real, &syntax_tree::Location::new(0, 0))
             )
@@ -464,6 +467,7 @@ mod test {
 
     #[test]
     fn test_check_for_stat() {
+        let fake_location = syntax_tree::Location::new(0, 0);
         let index_var = "index";
         let for_stat = make_for_stat(
             index_var,
@@ -482,7 +486,7 @@ mod test {
 
         let mut loop_contex = LoopContext::new();
 
-        check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex).unwrap();
+        check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex, &fake_location).unwrap();
 
         assert_eq!(loop_contex.nested_loops, 0);
         assert_eq!(loop_contex.indexes.len(), 0);
@@ -492,7 +496,7 @@ mod test {
             syntax_tree::Const::RealConst(0.0),
             syntax_tree::Const::IntConst(10),
         );
-        let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
+        let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex, &fake_location);
         assert!(matches!(stat,
                 Err(SemanticError::ForLoopError(ForLoopError {loc: _, error}))
                  if matches!(&error, ForLoopErrorType::NonIntegerStart(kind)
@@ -503,7 +507,7 @@ mod test {
             syntax_tree::Const::IntConst(0),
             syntax_tree::Const::RealConst(10.0),
         );
-        let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex);
+        let stat = check_for_stat(&for_stat, &table, &Contex::Global, &mut loop_contex, &fake_location);
         assert!(
             matches!(stat,
                  Err(SemanticError::ForLoopError(ForLoopError {loc: _, error}))
@@ -522,13 +526,13 @@ mod test {
             make_constant_expr(from),
             make_constant_expr(to),
             vec![],
-            0,
-            0,
+           
         )
     }
 
     #[test]
     fn test_check_while_stat() {
+        let fake_location = syntax_tree::Location::new(0, 0);
         let table_factory = name_table_factory()
             .switch_to_function_table()
             .switch_to_local_table();
@@ -537,14 +541,14 @@ mod test {
 
         let mut loop_contex = LoopContext::new();
 
-        check_while_stat(&while_stat, &table, &Contex::Global, &mut loop_contex).unwrap();
+        check_while_stat(&while_stat, &table, &Contex::Global, &mut loop_contex, &fake_location).unwrap();
 
         assert_eq!(loop_contex.nested_loops, 0);
         assert_eq!(loop_contex.indexes.len(), 0);
 
         let while_stat = make_while_stat(syntax_tree::Operator::Add);
 
-        let stat = check_while_stat(&while_stat, &table, &Contex::Global, &mut loop_contex);
+        let stat = check_while_stat(&while_stat, &table, &Contex::Global, &mut loop_contex, &fake_location);
 
         assert!(matches!(stat,
                 Err(SemanticError::NonBooleanCondition(NonBooleanCondition{loc: _, error}))
@@ -567,8 +571,7 @@ mod test {
                 0,
             ),
             vec![],
-            0,
-            0,
+            
         )
     }
 

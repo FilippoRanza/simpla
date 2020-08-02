@@ -113,7 +113,22 @@ impl FuncDecl {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum Stat {
+pub struct Stat {
+    pub loc: Location,
+    pub stat: StatType,
+}
+
+impl Stat {
+    pub fn new(stat: StatType, begin: usize, end: usize) -> Self {
+        Self {
+            stat,
+            loc: Location::new(begin, end),
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum StatType {
     AssignStat(AssignStat),
     IfStat(IfStat),
     WhileStat(WhileStat),
@@ -129,16 +144,11 @@ pub enum Stat {
 pub struct AssignStat {
     pub id: String,
     pub expr: Expr,
-    pub loc: Location,
 }
 
 impl AssignStat {
-    pub fn new(id: String, expr: Expr, begin: usize, end: usize) -> Self {
-        Self {
-            id,
-            expr,
-            loc: Location::new(begin, end),
-        }
+    pub fn new(id: String, expr: Expr) -> Self {
+        Self { id, expr }
     }
 }
 
@@ -147,22 +157,14 @@ pub struct IfStat {
     pub cond: Expr,
     pub if_body: StatList,
     pub else_body: Option<StatList>,
-    pub loc: Location,
 }
 
 impl IfStat {
-    pub fn new(
-        cond: Expr,
-        if_body: StatList,
-        else_body: Option<StatList>,
-        begin: usize,
-        end: usize,
-    ) -> Self {
+    pub fn new(cond: Expr, if_body: StatList, else_body: Option<StatList>) -> Self {
         Self {
             cond,
             if_body,
             else_body,
-            loc: Location::new(begin, end),
         }
     }
 }
@@ -171,16 +173,11 @@ impl IfStat {
 pub struct WhileStat {
     pub cond: Expr,
     pub body: StatList,
-    pub loc: Location,
 }
 
 impl WhileStat {
-    pub fn new(cond: Expr, body: StatList, begin: usize, end: usize) -> Self {
-        Self {
-            cond,
-            body,
-            loc: Location::new(begin, end),
-        }
+    pub fn new(cond: Expr, body: StatList) -> Self {
+        Self { cond, body }
     }
 }
 
@@ -190,24 +187,15 @@ pub struct ForStat {
     pub begin_expr: Expr,
     pub end_expr: Expr,
     pub body: StatList,
-    pub loc: Location,
 }
 
 impl ForStat {
-    pub fn new(
-        id: String,
-        begin_expr: Expr,
-        end_expr: Expr,
-        body: StatList,
-        begin: usize,
-        end: usize,
-    ) -> Self {
+    pub fn new(id: String, begin_expr: Expr, end_expr: Expr, body: StatList) -> Self {
         Self {
             id,
             begin_expr,
             end_expr,
             body,
-            loc: Location::new(begin, end),
         }
     }
 }
@@ -222,16 +210,11 @@ pub enum WriteStat {
 pub struct FuncCall {
     pub id: String,
     pub args: ExprList,
-    pub loc: Location,
 }
 
 impl FuncCall {
-    pub fn new(id: String, args: ExprList, begin: usize, end: usize) -> Self {
-        Self {
-            id,
-            args,
-            loc: Location::new(begin, end),
-        }
+    pub fn new(id: String, args: ExprList) -> Self {
+        Self { id, args }
     }
 }
 
@@ -297,7 +280,6 @@ impl CondExpr {
         }
     }
 }
-
 
 #[derive(PartialEq, Debug)]
 pub enum CastExpr {

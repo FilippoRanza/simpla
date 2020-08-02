@@ -64,24 +64,24 @@ StatList : syntax_tree::StatList = {
 }
 
 Stat: syntax_tree::Stat = {
-    <assign_stat:(AssignStat)> => syntax_tree::Stat::AssignStat(assign_stat),
-    <if_stat:(IfStat)> => syntax_tree::Stat::IfStat(if_stat),
-    <while_stat:(WhileStat)> => syntax_tree::Stat::WhileStat(while_stat),
-    <for_stat:(ForStat)> => syntax_tree::Stat::ForStat(for_stat),
-    <return_stat:(ReturnStat)> => syntax_tree::Stat::ReturnStat(return_stat),
-    <read_stat:(ReadStat)> => syntax_tree::Stat::ReadStat(read_stat),
-    <write_stat:(WriteStat)> => syntax_tree::Stat::WriteStat(write_stat),
-    <func_call:(FuncCall)> => syntax_tree::Stat::FuncCall(func_call),
-    BreakKW => syntax_tree::Stat::Break
+    <begin: @L> <assign_stat:(AssignStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::AssignStat(assign_stat), begin, end),
+    <begin: @L> <if_stat:(IfStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::IfStat(if_stat), begin, end),
+    <begin: @L> <while_stat:(WhileStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::WhileStat(while_stat), begin, end),
+    <begin: @L> <for_stat:(ForStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::ForStat(for_stat), begin, end),
+    <begin: @L> <return_stat:(ReturnStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::ReturnStat(return_stat), begin, end),
+    <begin: @L> <read_stat:(ReadStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::ReadStat(read_stat), begin, end),
+    <begin: @L> <write_stat:(WriteStat)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::WriteStat(write_stat), begin, end),
+    <begin: @L> <func_call:(FuncCall)> <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::FuncCall(func_call), begin, end),
+    <begin: @L> BreakKW <end: @R> => syntax_tree::Stat::new(syntax_tree::StatType::Break, begin, end)
 }
 
 AssignStat : syntax_tree::AssignStat = {
-    <begin: @L> <id:Id> AssignPunct <expr: Expr> <end: @R> => syntax_tree::AssignStat::new(id, expr, begin, end)
+     <id:Id> AssignPunct <expr: Expr> => syntax_tree::AssignStat::new(id, expr)
 }
 
 IfStat : syntax_tree::IfStat = {
-    <begin: @L> IfKW <cond:Expr> ThenKW <if_body: StatList> <else_body: (ElseStat)?> EndKW  <end: @R> 
-        => syntax_tree::IfStat::new(cond, if_body, else_body, begin, end)
+     IfKW <cond:Expr> ThenKW <if_body: StatList> <else_body: (ElseStat)?> EndKW
+        => syntax_tree::IfStat::new(cond, if_body, else_body)
 }
 
 ElseStat: syntax_tree::StatList = {
@@ -89,12 +89,12 @@ ElseStat: syntax_tree::StatList = {
 }
 
 WhileStat : syntax_tree::WhileStat = {
-    <begin: @L> WhileKW <cond: Expr> DoKW <body: StatList> EndKW <end: @R> => syntax_tree::WhileStat::new(cond, body, begin, end)
+    WhileKW <cond: Expr> DoKW <body: StatList> EndKW=> syntax_tree::WhileStat::new(cond, body)
 }
 
 ForStat : syntax_tree::ForStat = {
-    <begin: @L> ForKW <id:Id> AssignPunct <begin_expr: Expr> ToKW <end_expr: Expr> DoKW <body: StatList> EndKW <end: @R> 
-        => syntax_tree::ForStat::new(id, begin_expr, end_expr, body, begin, end)
+    ForKW <id:Id> AssignPunct <begin_expr: Expr> ToKW <end_expr: Expr> DoKW <body: StatList> EndKW
+        => syntax_tree::ForStat::new(id, begin_expr, end_expr, body)
 }
 
 ReturnStat : Option<syntax_tree::Expr> = {
@@ -115,8 +115,8 @@ WriteStat : syntax_tree::WriteStat = {
 }
 
 FuncCall : syntax_tree::FuncCall = {
-    <begin: @L> <id:Id> OpenBracketPunct <args: ExprList> CloseBracketPunct <end: @R> 
-        => syntax_tree::FuncCall::new(id, args, begin, end)
+    <id:Id> OpenBracketPunct <args: ExprList> CloseBracketPunct
+        => syntax_tree::FuncCall::new(id, args)
 }
 
 ExprList : syntax_tree::ExprList = {

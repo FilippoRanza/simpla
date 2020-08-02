@@ -73,74 +73,80 @@ mod tests {
         let correct = Program::new(
             vec![],
             vec![],
-            vec![Stat::IfStat(IfStat::new(
-                Expr::new(
-                    ExprTree::Node(
-                        Box::new(Expr::new(
-                            ExprTree::Factor(Factor::Id("a".to_owned())),
-                            37,
-                            38,
-                        )),
-                        Operator::Greater,
-                        Box::new(Expr::new(
-                            ExprTree::Factor(Factor::Const(Const::IntConst(0))),
-                            41,
-                            42,
-                        )),
-                    ),
-                    37,
-                    42,
-                ),
-                vec![Stat::FuncCall(FuncCall::new(
-                    "do_stuff".to_owned(),
-                    vec![
-                        Expr::new(ExprTree::Factor(Factor::Id("a".to_owned())), 77, 78),
-                        Expr::new(
-                            ExprTree::Node(
-                                Box::new(Expr::new(
-                                    ExprTree::Factor(Factor::Id("b".to_owned())),
-                                    80,
-                                    81,
-                                )),
-                                Operator::Add,
-                                Box::new(Expr::new(
-                                    ExprTree::Factor(Factor::Id("c".to_owned())),
-                                    84,
-                                    85,
-                                )),
-                            ),
-                            80,
-                            85,
-                        ),
-                    ],
-                    68,
-                    86,
-                ))],
-                Some(vec![Stat::FuncCall(FuncCall::new(
-                    "do_other_stuff".to_owned(),
-                    vec![Expr::new(
+            vec![Stat::new(
+                StatType::IfStat(IfStat::new(
+                    Expr::new(
                         ExprTree::Node(
                             Box::new(Expr::new(
                                 ExprTree::Factor(Factor::Id("a".to_owned())),
-                                144,
-                                145,
+                                37,
+                                38,
                             )),
-                            Operator::Mul,
+                            Operator::Greater,
                             Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id("c".to_owned())),
-                                148,
-                                149,
+                                ExprTree::Factor(Factor::Const(Const::IntConst(0))),
+                                41,
+                                42,
                             )),
                         ),
-                        144,
-                        149,
+                        37,
+                        42,
+                    ),
+                    vec![Stat::new(
+                        StatType::FuncCall(FuncCall::new(
+                            "do_stuff".to_owned(),
+                            vec![
+                                Expr::new(ExprTree::Factor(Factor::Id("a".to_owned())), 77, 78),
+                                Expr::new(
+                                    ExprTree::Node(
+                                        Box::new(Expr::new(
+                                            ExprTree::Factor(Factor::Id("b".to_owned())),
+                                            80,
+                                            81,
+                                        )),
+                                        Operator::Add,
+                                        Box::new(Expr::new(
+                                            ExprTree::Factor(Factor::Id("c".to_owned())),
+                                            84,
+                                            85,
+                                        )),
+                                    ),
+                                    80,
+                                    85,
+                                ),
+                            ],
+                        )),
+                        68,
+                        86,
                     )],
-                    129,
-                    150,
-                ))]),
+                    Some(vec![Stat::new(
+                        StatType::FuncCall(FuncCall::new(
+                            "do_other_stuff".to_owned(),
+                            vec![Expr::new(
+                                ExprTree::Node(
+                                    Box::new(Expr::new(
+                                        ExprTree::Factor(Factor::Id("a".to_owned())),
+                                        144,
+                                        145,
+                                    )),
+                                    Operator::Mul,
+                                    Box::new(Expr::new(
+                                        ExprTree::Factor(Factor::Id("c".to_owned())),
+                                        148,
+                                        149,
+                                    )),
+                                ),
+                                144,
+                                149,
+                            )],
+                        )),
+                        129,
+                        150,
+                    )]),
+                )),
                 34,
                 171,
-            ))],
+            )],
         );
         assert_eq!(tree, correct);
     }
@@ -157,68 +163,76 @@ mod tests {
         let result = Program::new(
             vec![],
             vec![],
-            vec![Stat::AssignStat(AssignStat::new(
-                "a".to_owned(),
-                Expr::new(
-                    ExprTree::Node(
-                        Box::new(Expr::new(
-                            ExprTree::Factor(Factor::Const(Const::IntConst(5))),
-                            38,
-                            39,
-                        )),
-                        Operator::Add,
-                        Box::new(Expr::new(
-                            ExprTree::Node(
-                                Box::new(Expr::new(
-                                    ExprTree::Node(
-                                        Box::new(Expr::new(
-                                            ExprTree::Factor(Factor::Const(Const::IntConst(6))),
-                                            42,
-                                            43,
-                                        )),
-                                        Operator::Mul,
-                                        Box::new(Expr::new(
-                                            ExprTree::Factor(Factor::Const(Const::IntConst(7))),
-                                            46,
-                                            47,
-                                        )),
-                                    ),
-                                    42,
-                                    47,
-                                )),
-                                Operator::Mul,
-                                Box::new(Expr::new(
-                                    ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
+            vec![Stat::new(
+                StatType::AssignStat(AssignStat::new(
+                    "a".to_owned(),
+                    Expr::new(
+                        ExprTree::Node(
+                            Box::new(Expr::new(
+                                ExprTree::Factor(Factor::Const(Const::IntConst(5))),
+                                38,
+                                39,
+                            )),
+                            Operator::Add,
+                            Box::new(Expr::new(
+                                ExprTree::Node(
+                                    Box::new(Expr::new(
                                         ExprTree::Node(
                                             Box::new(Expr::new(
-                                                ExprTree::Factor(Factor::Const(Const::IntConst(8))),
-                                                51,
-                                                52,
+                                                ExprTree::Factor(Factor::Const(Const::IntConst(6))),
+                                                42,
+                                                43,
                                             )),
-                                            Operator::Add,
+                                            Operator::Mul,
                                             Box::new(Expr::new(
-                                                ExprTree::Factor(Factor::Const(Const::IntConst(9))),
-                                                55,
-                                                56,
+                                                ExprTree::Factor(Factor::Const(Const::IntConst(7))),
+                                                46,
+                                                47,
                                             )),
                                         ),
-                                        51,
-                                        56,
-                                    )))),
-                                    50,
-                                    57,
-                                )),
-                            ),
-                            42,
-                            57,
-                        )),
+                                        42,
+                                        47,
+                                    )),
+                                    Operator::Mul,
+                                    Box::new(Expr::new(
+                                        ExprTree::Factor(Factor::HighPrecedence(Box::new(
+                                            Expr::new(
+                                                ExprTree::Node(
+                                                    Box::new(Expr::new(
+                                                        ExprTree::Factor(Factor::Const(
+                                                            Const::IntConst(8),
+                                                        )),
+                                                        51,
+                                                        52,
+                                                    )),
+                                                    Operator::Add,
+                                                    Box::new(Expr::new(
+                                                        ExprTree::Factor(Factor::Const(
+                                                            Const::IntConst(9),
+                                                        )),
+                                                        55,
+                                                        56,
+                                                    )),
+                                                ),
+                                                51,
+                                                56,
+                                            ),
+                                        ))),
+                                        50,
+                                        57,
+                                    )),
+                                ),
+                                42,
+                                57,
+                            )),
+                        ),
+                        38,
+                        57,
                     ),
-                    38,
-                    57,
-                ),
+                )),
                 34,
                 57,
-            ))],
+            )],
         );
 
         assert_eq!(tree, result);
@@ -270,8 +284,8 @@ mod tests {
         assert_eq!(tree_a.functions, tree_b.functions);
 
         assert_eq!(tree_a.body.len(), tree_b.body.len());
-        match (&tree_a.body[0], &tree_b.body[0]) {
-            (Stat::AssignStat(assign_a), Stat::AssignStat(assign_b)) => {
+        match (&tree_a.body[0].stat, &tree_b.body[0].stat) {
+            (StatType::AssignStat(assign_a), StatType::AssignStat(assign_b)) => {
                 assert_eq!(assign_a.id, assign_b.id);
                 assert_eq!(assign_a.expr, assign_b.expr);
             }
@@ -306,51 +320,51 @@ mod tests {
             vec![],
             vec![],
             vec![
-                Stat::AssignStat(AssignStat::new(
-                    "a".to_owned(),
-                    Expr::new(
-                        ExprTree::Factor(Factor::Const(Const::RealConst(5.67))),
-                        38,
-                        42,
-                    ),
+                Stat::new(
+                    StatType::AssignStat(AssignStat::new(
+                        "a".to_owned(),
+                        Expr::new(
+                            ExprTree::Factor(Factor::Const(Const::RealConst(5.67))),
+                            38,
+                            42,
+                        ),
+                    )),
                     34,
                     42,
-                )),
-                Stat::AssignStat(AssignStat::new(
-                    "b".to_owned(),
-                    Expr::new(
-                        ExprTree::Factor(Factor::CastExpr(CastExpr::Integer(
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id("a".to_owned())),
-                                72,
-                                73,
-                            )),
-                        ))),
-                        64,
-                        74,
-                    ),
+                ),
+                Stat::new(
+                    StatType::AssignStat(AssignStat::new(
+                        "b".to_owned(),
+                        Expr::new(
+                            ExprTree::Factor(Factor::CastExpr(CastExpr::Integer(Box::new(
+                                Expr::new(ExprTree::Factor(Factor::Id("a".to_owned())), 72, 73),
+                            )))),
+                            64,
+                            74,
+                        ),
+                    )),
                     60,
                     74,
-                )),
-                Stat::AssignStat(AssignStat::new(
-                    "c".to_owned(),
-                    Expr::new(
-                        ExprTree::Factor(Factor::FuncCall(FuncCall::new(
-                            "function".to_owned(),
-                            vec![Expr::new(
-                                ExprTree::Factor(Factor::Id("b".to_owned())),
-                                105,
-                                106,
-                            )],
+                ),
+                Stat::new(
+                    StatType::AssignStat(AssignStat::new(
+                        "c".to_owned(),
+                        Expr::new(
+                            ExprTree::Factor(Factor::FuncCall(FuncCall::new(
+                                "function".to_owned(),
+                                vec![Expr::new(
+                                    ExprTree::Factor(Factor::Id("b".to_owned())),
+                                    105,
+                                    106,
+                                )],
+                            ))),
                             96,
                             107,
-                        ))),
-                        96,
-                        107,
-                    ),
+                        ),
+                    )),
                     92,
                     107,
-                )),
+                ),
             ],
         );
 
@@ -403,155 +417,197 @@ mod tests {
                         VarDecl::new(vec!["c".to_owned(), "d".to_owned()], Kind::Str, 119, 133),
                     ],
                     vec![
-                        Stat::AssignStat(AssignStat::new(
-                            "c".to_owned(),
-                            Expr::new(
-                                ExprTree::Factor(Factor::Const(Const::StrConst(
-                                    "while is a keyword".to_owned(),
-                                ))),
-                                171,
-                                191,
-                            ),
+                        Stat::new(
+                            StatType::AssignStat(AssignStat::new(
+                                "c".to_owned(),
+                                Expr::new(
+                                    ExprTree::Factor(Factor::Const(Const::StrConst(
+                                        "while is a keyword".to_owned(),
+                                    ))),
+                                    171,
+                                    191,
+                                ),
+                            )),
                             167,
                             191,
-                        )),
-                        Stat::AssignStat(AssignStat::new(
-                            "d".to_owned(),
-                            Expr::new(
-                                ExprTree::Factor(Factor::Const(Const::StrConst(
-                                    "for = 45 is illegal in simpla".to_owned(),
-                                ))),
-                                213,
-                                244,
-                            ),
+                        ),
+                        Stat::new(
+                            StatType::AssignStat(AssignStat::new(
+                                "d".to_owned(),
+                                Expr::new(
+                                    ExprTree::Factor(Factor::Const(Const::StrConst(
+                                        "for = 45 is illegal in simpla".to_owned(),
+                                    ))),
+                                    213,
+                                    244,
+                                ),
+                            )),
                             209,
                             244,
-                        )),
-                        Stat::ForStat(ForStat::new(
-                            "i".to_owned(),
-                            Expr::new(
-                                ExprTree::Factor(Factor::Const(Const::IntConst(0))),
-                                270,
-                                271,
-                            ),
-                            Expr::new(ExprTree::Factor(Factor::Id("a".to_owned())), 275, 276),
-                            vec![
-                                Stat::WriteStat(WriteStat::Write(vec![Expr::new(
-                                    ExprTree::Factor(Factor::Id("c".to_owned())),
-                                    306,
-                                    307,
-                                )])),
-                                Stat::AssignStat(AssignStat::new(
-                                    "j".to_owned(),
-                                    Expr::new(
-                                        ExprTree::Factor(Factor::Id("i".to_owned())),
-                                        334,
+                        ),
+                        Stat::new(
+                            StatType::ForStat(ForStat::new(
+                                "i".to_owned(),
+                                Expr::new(
+                                    ExprTree::Factor(Factor::Const(Const::IntConst(0))),
+                                    270,
+                                    271,
+                                ),
+                                Expr::new(ExprTree::Factor(Factor::Id("a".to_owned())), 275, 276),
+                                vec![
+                                    Stat::new(
+                                        StatType::WriteStat(WriteStat::Write(vec![Expr::new(
+                                            ExprTree::Factor(Factor::Id("c".to_owned())),
+                                            306,
+                                            307,
+                                        )])),
+                                        300,
+                                        308,
+                                    ),
+                                    Stat::new(
+                                        StatType::AssignStat(AssignStat::new(
+                                            "j".to_owned(),
+                                            Expr::new(
+                                                ExprTree::Factor(Factor::Id("i".to_owned())),
+                                                334,
+                                                335,
+                                            ),
+                                        )),
+                                        330,
                                         335,
                                     ),
-                                    330,
-                                    335,
-                                )),
-                                Stat::WhileStat(WhileStat::new(
-                                    Expr::new(
-                                        ExprTree::Node(
-                                            Box::new(Expr::new(
-                                                ExprTree::Factor(Factor::Id("j".to_owned())),
-                                                363,
-                                                364,
-                                            )),
-                                            Operator::Greater,
-                                            Box::new(Expr::new(
-                                                ExprTree::Factor(Factor::Const(Const::IntConst(0))),
-                                                367,
-                                                368,
-                                            )),
-                                        ),
-                                        363,
-                                        368,
-                                    ),
-                                    vec![
-                                        Stat::IfStat(IfStat::new(
-                                            Expr::new(
-                                                ExprTree::Node(
-                                                    Box::new(Expr::new(
-                                                        ExprTree::Node(
-                                                            Box::new(Expr::new(
-                                                                ExprTree::Factor(Factor::Id(
-                                                                    "j".to_owned(),
-                                                                )),
-                                                                399,
-                                                                400,
-                                                            )),
-                                                            Operator::Div,
-                                                            Box::new(Expr::new(
-                                                                ExprTree::Factor(Factor::Const(
-                                                                    Const::IntConst(2),
-                                                                )),
-                                                                403,
-                                                                404,
-                                                            )),
-                                                        ),
-                                                        399,
-                                                        404,
-                                                    )),
-                                                    Operator::Greater,
-                                                    Box::new(Expr::new(
-                                                        ExprTree::Factor(Factor::Const(
-                                                            Const::IntConst(5),
-                                                        )),
-                                                        407,
-                                                        408,
-                                                    )),
-                                                ),
-                                                399,
-                                                408,
-                                            ),
-                                            vec![Stat::WriteStat(WriteStat::Write(vec![
-                                                Expr::new(
-                                                    ExprTree::Factor(Factor::Id("d".to_owned())),
-                                                    448,
-                                                    449,
-                                                ),
-                                            ]))],
-                                            None,
-                                            396,
-                                            479,
-                                        )),
-                                        Stat::AssignStat(AssignStat::new(
-                                            "j".to_owned(),
+                                    Stat::new(
+                                        StatType::WhileStat(WhileStat::new(
                                             Expr::new(
                                                 ExprTree::Node(
                                                     Box::new(Expr::new(
                                                         ExprTree::Factor(Factor::Id(
                                                             "j".to_owned(),
                                                         )),
-                                                        509,
-                                                        510,
+                                                        363,
+                                                        364,
                                                     )),
-                                                    Operator::Sub,
+                                                    Operator::Greater,
                                                     Box::new(Expr::new(
                                                         ExprTree::Factor(Factor::Const(
-                                                            Const::IntConst(1),
+                                                            Const::IntConst(0),
                                                         )),
-                                                        513,
-                                                        514,
+                                                        367,
+                                                        368,
                                                     )),
                                                 ),
-                                                509,
-                                                514,
+                                                363,
+                                                368,
                                             ),
-                                            505,
-                                            514,
+                                            vec![
+                                                Stat::new(
+                                                    StatType::IfStat(IfStat::new(
+                                                        Expr::new(
+                                                            ExprTree::Node(
+                                                                Box::new(Expr::new(
+                                                                    ExprTree::Node(
+                                                                        Box::new(Expr::new(
+                                                                            ExprTree::Factor(
+                                                                                Factor::Id(
+                                                                                    "j".to_owned(),
+                                                                                ),
+                                                                            ),
+                                                                            399,
+                                                                            400,
+                                                                        )),
+                                                                        Operator::Div,
+                                                                        Box::new(Expr::new(
+                                                                            ExprTree::Factor(
+                                                                                Factor::Const(
+                                                                                    Const::IntConst(
+                                                                                        2,
+                                                                                    ),
+                                                                                ),
+                                                                            ),
+                                                                            403,
+                                                                            404,
+                                                                        )),
+                                                                    ),
+                                                                    399,
+                                                                    404,
+                                                                )),
+                                                                Operator::Greater,
+                                                                Box::new(Expr::new(
+                                                                    ExprTree::Factor(
+                                                                        Factor::Const(
+                                                                            Const::IntConst(5),
+                                                                        ),
+                                                                    ),
+                                                                    407,
+                                                                    408,
+                                                                )),
+                                                            ),
+                                                            399,
+                                                            408,
+                                                        ),
+                                                        vec![Stat::new(
+                                                            StatType::WriteStat(WriteStat::Write(
+                                                                vec![Expr::new(
+                                                                    ExprTree::Factor(Factor::Id(
+                                                                        "d".to_owned(),
+                                                                    )),
+                                                                    448,
+                                                                    449,
+                                                                )],
+                                                            )),
+                                                            442,
+                                                            450,
+                                                        )],
+                                                        None,
+                                                    )),
+                                                    396,
+                                                    479,
+                                                ),
+                                                Stat::new(
+                                                    StatType::AssignStat(AssignStat::new(
+                                                        "j".to_owned(),
+                                                        Expr::new(
+                                                            ExprTree::Node(
+                                                                Box::new(Expr::new(
+                                                                    ExprTree::Factor(Factor::Id(
+                                                                        "j".to_owned(),
+                                                                    )),
+                                                                    509,
+                                                                    510,
+                                                                )),
+                                                                Operator::Sub,
+                                                                Box::new(Expr::new(
+                                                                    ExprTree::Factor(
+                                                                        Factor::Const(
+                                                                            Const::IntConst(1),
+                                                                        ),
+                                                                    ),
+                                                                    513,
+                                                                    514,
+                                                                )),
+                                                            ),
+                                                            509,
+                                                            514,
+                                                        ),
+                                                    )),
+                                                    505,
+                                                    514,
+                                                ),
+                                            ],
                                         )),
-                                    ],
-                                    357,
-                                    539,
-                                )),
-                                Stat::WriteStat(WriteStat::WriteLine(vec![])),
-                            ],
+                                        357,
+                                        539,
+                                    ),
+                                    Stat::new(
+                                        StatType::WriteStat(WriteStat::WriteLine(vec![])),
+                                        561,
+                                        570,
+                                    ),
+                                ],
+                            )),
                             262,
                             591,
-                        )),
+                        ),
                     ],
                     38,
                     609,
@@ -561,27 +617,33 @@ mod tests {
                     vec![],
                     Kind::Int,
                     vec![],
-                    vec![Stat::ReturnStat(Some(Expr::new(
-                        ExprTree::Factor(Factor::Const(Const::IntConst(5))),
-                        692,
+                    vec![Stat::new(
+                        StatType::ReturnStat(Some(Expr::new(
+                            ExprTree::Factor(Factor::Const(Const::IntConst(5))),
+                            692,
+                            693,
+                        ))),
+                        685,
                         693,
-                    )))],
+                    )],
                     623,
                     711,
                 ),
             ],
             vec![
-                Stat::ReadStat(vec!["n".to_owned()]),
-                Stat::FuncCall(FuncCall::new(
-                    "do_stuff".to_owned(),
-                    vec![Expr::new(
-                        ExprTree::Factor(Factor::Id("n".to_owned())),
-                        780,
-                        781,
-                    )],
+                Stat::new(StatType::ReadStat(vec!["n".to_owned()]), 746, 753),
+                Stat::new(
+                    StatType::FuncCall(FuncCall::new(
+                        "do_stuff".to_owned(),
+                        vec![Expr::new(
+                            ExprTree::Factor(Factor::Id("n".to_owned())),
+                            780,
+                            781,
+                        )],
+                    )),
                     771,
                     782,
-                )),
+                ),
             ],
         );
 
@@ -616,96 +678,100 @@ mod tests {
         let correct = Program::new(
             vec![],
             vec![],
-            vec![Stat::AssignStat(AssignStat::new(
-                "a".to_owned(),
-                Expr::new(
-                    ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
-                        ExprTree::Node(
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id("b".to_owned())),
-                                39,
-                                40,
-                            )),
-                            Operator::Mul,
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
-                                    ExprTree::Node(
-                                        Box::new(Expr::new(
-                                            ExprTree::Factor(Factor::Id("c".to_owned())),
-                                            44,
-                                            45,
-                                        )),
-                                        Operator::Add,
-                                        Box::new(Expr::new(
-                                            ExprTree::Factor(Factor::Id("d".to_owned())),
-                                            48,
-                                            49,
-                                        )),
-                                    ),
-                                    44,
-                                    49,
-                                )))),
-                                43,
-                                50,
-                            )),
-                        ),
-                        39,
-                        50,
-                    )))),
-                    38,
-                    51,
-                ),
+            vec![Stat::new(
+                StatType::AssignStat(AssignStat::new(
+                    "a".to_owned(),
+                    Expr::new(
+                        ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
+                            ExprTree::Node(
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(Factor::Id("b".to_owned())),
+                                    39,
+                                    40,
+                                )),
+                                Operator::Mul,
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
+                                        ExprTree::Node(
+                                            Box::new(Expr::new(
+                                                ExprTree::Factor(Factor::Id("c".to_owned())),
+                                                44,
+                                                45,
+                                            )),
+                                            Operator::Add,
+                                            Box::new(Expr::new(
+                                                ExprTree::Factor(Factor::Id("d".to_owned())),
+                                                48,
+                                                49,
+                                            )),
+                                        ),
+                                        44,
+                                        49,
+                                    )))),
+                                    43,
+                                    50,
+                                )),
+                            ),
+                            39,
+                            50,
+                        )))),
+                        38,
+                        51,
+                    ),
+                )),
                 34,
                 51,
-            ))],
+            )],
         );
         assert_eq!(correct, tree);
 
         let correct = Program::new(
             vec![],
             vec![],
-            vec![Stat::AssignStat(AssignStat::new(
-                "a".to_owned(),
-                Expr::new(
-                    ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
-                        ExprTree::Node(
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id("b".to_owned())),
-                                44,
-                                45,
-                            )),
-                            Operator::Mul,
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
-                                    ExprTree::Node(
-                                        Box::new(Expr::new(
-                                            ExprTree::Factor(Factor::Id("c".to_owned())),
-                                            53,
-                                            54,
-                                        )),
-                                        Operator::Add,
-                                        Box::new(Expr::new(
-                                            ExprTree::Factor(Factor::Id("d".to_owned())),
-                                            57,
-                                            58,
-                                        )),
-                                    ),
-                                    53,
-                                    58,
-                                )))),
-                                48,
-                                63,
-                            )),
-                        ),
-                        44,
-                        63,
-                    )))),
-                    39,
-                    68,
-                ),
+            vec![Stat::new(
+                StatType::AssignStat(AssignStat::new(
+                    "a".to_owned(),
+                    Expr::new(
+                        ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
+                            ExprTree::Node(
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(Factor::Id("b".to_owned())),
+                                    44,
+                                    45,
+                                )),
+                                Operator::Mul,
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(Factor::HighPrecedence(Box::new(Expr::new(
+                                        ExprTree::Node(
+                                            Box::new(Expr::new(
+                                                ExprTree::Factor(Factor::Id("c".to_owned())),
+                                                53,
+                                                54,
+                                            )),
+                                            Operator::Add,
+                                            Box::new(Expr::new(
+                                                ExprTree::Factor(Factor::Id("d".to_owned())),
+                                                57,
+                                                58,
+                                            )),
+                                        ),
+                                        53,
+                                        58,
+                                    )))),
+                                    48,
+                                    63,
+                                )),
+                            ),
+                            44,
+                            63,
+                        )))),
+                        39,
+                        68,
+                    ),
+                )),
                 35,
                 68,
-            ))],
+            )],
         );
 
         let code = r"#

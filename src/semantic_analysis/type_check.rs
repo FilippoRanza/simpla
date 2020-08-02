@@ -8,8 +8,9 @@ use simpla_parser::syntax_tree;
 pub fn function_call_check<'a>(
     func_call: &'a syntax_tree::FuncCall,
     table: &'a LocalVariableTable<'a>,
+    loc: &'a syntax_tree::Location
 ) -> Result<(), SemanticError<'a>> {
-    check_function_call(func_call, table)?;
+    check_function_call(func_call, table, loc)?;
     Ok(())
 }
 
@@ -93,7 +94,7 @@ fn check_factor<'a>(
         syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table, loc),
         syntax_tree::Factor::CondExpr(cond) => check_conditional_expression(cond, table, loc),
         syntax_tree::Factor::Const(val) => Ok(check_const(val)),
-        syntax_tree::Factor::FuncCall(func) => check_function_call(func, table),
+        syntax_tree::Factor::FuncCall(func) => check_function_call(func, table, loc),
         syntax_tree::Factor::HighPrecedence(expr) => type_check(expr, table),
         syntax_tree::Factor::Id(name) => check_id(name, table),
         syntax_tree::Factor::UnaryOp(unary) => check_unary_operator(unary, table, loc),
@@ -199,6 +200,7 @@ fn check_unary_operator<'a>(
 fn check_function_call<'a>(
     fcall: &'a syntax_tree::FuncCall,
     table: &'a LocalVariableTable,
+    loc: &'a syntax_tree::Location
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     let func_proto = table.get_function(&fcall.id)?;
     if func_proto.params.len() == fcall.args.len() {
@@ -210,7 +212,7 @@ fn check_function_call<'a>(
                     formal.kind.clone(),
                     actual_kind,
                     i,
-                    &fcall.loc,
+                    loc,
                 ));
                 return Err(err);
             }
@@ -231,6 +233,7 @@ mod test {
 
     #[test]
     fn test_check_function_call() {
+        let fake_location = syntax_tree::Location::new(0, 0);
         let mut table = name_table_factory();
         let var_name = "value";
         let loc = Location::new(123, 456);
@@ -265,9 +268,9 @@ mod test {
         let table_factory = table.switch_to_local_table();
         let table = table_factory.factory_local_table();
 
-        let func_call = FuncCall::new(func_name_a.to_owned(), vec![], 0, 0);
+        let func_call = FuncCall::new(func_name_a.to_owned(), vec![]);
 
-        let stat = check_function_call(&func_call, &table).unwrap();
+        let stat = check_function_call(&func_call, &table, &Location::new(0, 0)).unwrap();
         assert_eq!(stat, Kind::Int);
 
         let func_call = FuncCall::new(
@@ -277,10 +280,8 @@ mod test {
                 0,
                 0,
             )],
-            0,
-            0,
         );
-        let stat = check_function_call(&func_call, &table);
+        let stat = check_function_call(&func_call, &table, &fake_location);
         check_error_status(
             stat,
             SemanticError::ArgumentCountError(ArgumentCountError::new(&func_decl_a, &func_call)),
@@ -293,10 +294,8 @@ mod test {
                 0,
                 0,
             )],
-            0,
-            0,
         );
-        let stat = check_function_call(&func_call, &table);
+        let stat = check_function_call(&func_call, &table, &fake_location);
         check_error_status(
             stat,
             SemanticError::MismatchedArgumentType(MismatchedArgumentType::new(
@@ -304,7 +303,7 @@ mod test {
                 Kind::Str,
                 Kind::Int,
                 0,
-                &func_call.loc,
+                &fake_location,
             )),
         );
     }
@@ -536,8 +535,7 @@ mod test {
                         56,
                         156,
                     )],
-                    0,
-                    0,
+                
                 ))),
                 0,
                 0,
@@ -594,8 +592,7 @@ mod test {
                         0,
                         0,
                     )],
-                    0,
-                    0,
+                    
                 ))),
                 156,
                 234,
@@ -648,8 +645,7 @@ mod test {
                         56,
                         100,
                     )],
-                    0,
-                    0,
+                    
                 ))),
                 56,
                 100,
