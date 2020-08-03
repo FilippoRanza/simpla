@@ -17,7 +17,7 @@ pub enum SemanticError<'a> {
     MismatchedAssignment(MismatchedAssignment<'a>),
     BreakOutsideLoop,
     ForLoopError(ForLoopError<'a>),
-    ReturnError(ReturnError),
+    ReturnError(ReturnError<'a>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -231,7 +231,31 @@ pub enum ForLoopErrorType<'a> {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum ReturnError {
+pub struct ReturnError<'a> {
+    pub loc: &'a syntax_tree::Location,
+    pub error: ReturnErrorType
+}
+
+impl<'a> ReturnError<'a> {
+    pub fn new_return_outside_function(loc: &'a syntax_tree::Location) -> Self {
+        Self {
+            loc, 
+            error: ReturnErrorType::ReturnOutsideFunction
+        }
+    }
+
+    pub fn new_mismatched_type(loc: &'a syntax_tree::Location, decl: syntax_tree::Kind, given: syntax_tree::Kind) -> Self {
+        Self {
+            loc, 
+            error: ReturnErrorType::MismatchedReturnType(decl, given)
+        }
+    }
+    
+}
+
+
+#[derive(PartialEq, Debug)]
+pub enum ReturnErrorType {
     ReturnOutsideFunction,
     //MissingReturn(&'a str),
     MismatchedReturnType(syntax_tree::Kind, syntax_tree::Kind),

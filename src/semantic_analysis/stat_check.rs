@@ -38,7 +38,7 @@ fn stat_check<'b, 'a: 'b>(
         syntax_tree::StatType::FuncCall(func_call) => function_call_check(func_call, table, &stat.loc),
         syntax_tree::StatType::IfStat(if_stat) => check_if_stat(if_stat, table, contex, loop_contex, &stat.loc),
         syntax_tree::StatType::ReadStat(read_stat) => check_read_stat(read_stat, table),
-        syntax_tree::StatType::ReturnStat(return_stat) => check_return_stat(return_stat, table, contex),
+        syntax_tree::StatType::ReturnStat(return_stat) => check_return_stat(return_stat, table, contex, &stat.loc),
         syntax_tree::StatType::WhileStat(while_stat) => {
             check_while_stat(while_stat, table, contex, loop_contex, &stat.loc)
         }
@@ -231,38 +231,31 @@ fn check_return_stat<'a>(
     return_stat: &'a Option<syntax_tree::Expr>,
     table: &'a LocalVariableTable,
     block_contex: &Contex,
+    loc: &'a syntax_tree::Location
 ) -> Result<(), SemanticError<'a>> {
     match block_contex {
-        Contex::Function(func_decl) => match &func_decl.kind {
-            syntax_tree::Kind::Void => match return_stat {
-                Some(stat) => {
-                    let kind = type_check(stat, table)?;
-                    let err = ReturnError::MismatchedReturnType(syntax_tree::Kind::Void, kind);
-                    Err(SemanticError::ReturnError(err))
-                }
-                None => Ok(()),
-            },
-            other => match return_stat {
-                Some(stat) => {
-                    let kind = type_check(stat, table)?;
-                    if &kind == other {
-                        Ok(())
-                    } else {
-                        let err = ReturnError::MismatchedReturnType(other.clone(), kind);
-                        Err(SemanticError::ReturnError(err))
-                    }
-                }
-                None => {
-                    let err =
-                        ReturnError::MismatchedReturnType(other.clone(), syntax_tree::Kind::Void);
-                    Err(SemanticError::ReturnError(err))
-                }
-            },
+        Contex::Function(func_decl) => {
+            let kind = get_return_kind(table, return_stat)?;
+            if kind == func_decl.kind {
+                Ok(())
+            } else {
+                let err = ReturnError::new_mismatched_type(loc, func_decl.kind.clone(), kind);
+                Err(SemanticError::ReturnError(err))
+            }
         },
         Contex::Global => {
-            let err = ReturnError::ReturnOutsideFunction;
+            let err = ReturnError::new_return_outside_function(loc);
             Err(SemanticError::ReturnError(err))
         }
+    }
+}
+
+
+fn get_return_kind<'a>(table: &'a LocalVariableTable, expr: &'a Option<syntax_tree::Expr>) -> Result<syntax_tree::Kind, SemanticError<'a>> {
+    if let Some(expr) = expr {
+        type_check(expr, table)
+    } else {
+        Ok(syntax_tree::Kind::Void)
     }
 }
 
@@ -311,7 +304,7 @@ fn check_expr_list<'a>(
 mod test {
 
     use super::super::name_table::{name_table_factory, VariableTable};
-    use super::super::semantic_error::{ForLoopErrorType, NonBooleanConditionType};
+    use super::super::semantic_error::{ForLoopErrorType, NonBooleanConditionType, ReturnErrorType};
     use super::*;
 
     #[test]
@@ -437,7 +430,7 @@ mod test {
 
         let table = table_factory.factory_local_table();
 
-        check_return_stat(&return_stat, &table, &Contex::Function(&func_decl)).unwrap();
+        check_return_stat(&return_stat, &table, &Contex::Function(&func_decl),&syntax_tree::Location::new(0, 0)).unwrap();
 
         let func_decl = syntax_tree::FuncDecl::new(
             "func_name".to_owned(),
@@ -449,19 +442,20 @@ mod test {
             0,
         );
 
-        let stat = check_return_stat(&return_stat, &table, &Contex::Function(&func_decl));
+        let fake_location = syntax_tree::Location::new(0, 0);
+        let stat = check_return_stat(&return_stat, &table, &Contex::Function(&func_decl), &fake_location);
         assert!(
-            matches!(stat, Err(SemanticError::ReturnError(ReturnError::MismatchedReturnType(correct, given)))
-                if correct == syntax_tree::Kind::Int && given == syntax_tree::Kind::Real
+            matches!(stat, Err(SemanticError::ReturnError(ReturnError{loc: _, error}))
+                if matches!(&error, ReturnErrorType::MismatchedReturnType(correct, given) if correct == &syntax_tree::Kind::Int && given == &syntax_tree::Kind::Real)
             )
         );
 
-        let stat = check_return_stat(&return_stat, &table, &Contex::Global);
+        let stat = check_return_stat(&return_stat, &table, &Contex::Global, &fake_location);
         assert!(matches!(
             stat,
             Err(SemanticError::ReturnError(
-                ReturnError::ReturnOutsideFunction
-            ))
+                ReturnError {loc: _, error}  
+            )) if matches!(error, ReturnErrorType::ReturnOutsideFunction)
         ));
     }
 
