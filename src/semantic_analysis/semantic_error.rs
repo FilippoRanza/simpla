@@ -159,7 +159,7 @@ impl<'a> MismatchedUnary<'a> {
     }
 
     pub fn new_numeric(loc: &'a syntax_tree::Location, kind: syntax_tree::Kind) -> Self {
-        let error = MismatchedUnaryType::Logic(kind);
+        let error = MismatchedUnaryType::Numeric(kind);
         Self { loc, error }
     }
 }

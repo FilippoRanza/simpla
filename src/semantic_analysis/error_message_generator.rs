@@ -1,16 +1,10 @@
 use super::extract_wrong_code::format_wrong_code;
 use super::semantic_error;
 use simpla_parser::syntax_tree;
-use std::convert;
 
-impl<'a> convert::From<semantic_error::SemanticError<'a>> for String {
-    fn from(err: semantic_error::SemanticError) -> String {
-        format!("{}", err.format_error(""))
-    }
-}
 
 impl<'a> semantic_error::SemanticError<'a> {
-    fn format_error(&self, code: &str) -> String {
+    pub fn format_error(&self, code: &str) -> String {
         let msg = match self {
             Self::NameRidefinition(err) => format!("name error: {}", err.format_error(code)),
             Self::VoidVariableDeclaration(err) => {
