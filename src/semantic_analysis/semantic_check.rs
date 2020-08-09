@@ -8,7 +8,7 @@ use super::variable_check::check_variables;
 pub fn semantic_check<'a>(program: &'a Program, code: &'a str) -> Result<(), String> {
     let table_factory = match init_table(&program) {
         Ok(table_factory) => table_factory,
-        Err(err) => return Err(err.format_error(code))
+        Err(err) => return Err(err.format_error(code)),
     };
 
     for decl in &program.functions {
@@ -37,10 +37,9 @@ fn init_table<'a>(
     Ok(func_tabl.switch_to_local_table())
 }
 
-
 fn convert_error<'a>(res: Result<(), SemanticError<'a>>, code: &'a str) -> Result<(), String> {
     match res {
         Ok(()) => Ok(()),
-        Err(err) => Err(err.format_error(code))
+        Err(err) => Err(err.format_error(code)),
     }
 }

@@ -8,7 +8,7 @@ use simpla_parser::syntax_tree;
 pub fn function_call_check<'a>(
     func_call: &'a syntax_tree::FuncCall,
     table: &'a LocalVariableTable<'a>,
-    loc: &'a syntax_tree::Location
+    loc: &'a syntax_tree::Location,
 ) -> Result<(), SemanticError<'a>> {
     check_function_call(func_call, table, loc)?;
     Ok(())
@@ -104,7 +104,7 @@ fn check_factor<'a>(
 fn check_cast<'a>(
     cast: &'a syntax_tree::CastExpr,
     table: &'a LocalVariableTable,
-    loc: &'a syntax_tree::Location
+    loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     match cast {
         syntax_tree::CastExpr::Integer(expr) => {
@@ -200,7 +200,7 @@ fn check_unary_operator<'a>(
 fn check_function_call<'a>(
     fcall: &'a syntax_tree::FuncCall,
     table: &'a LocalVariableTable,
-    loc: &'a syntax_tree::Location
+    loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
     let func_proto = table.get_function(&fcall.id)?;
     if func_proto.params.len() == fcall.args.len() {
@@ -325,39 +325,36 @@ mod test {
         let table_factory = table.switch_to_function_table().switch_to_local_table();
         let table = table_factory.factory_local_table();
 
-        let correct_real_cast = CastExpr::Real(
-            Box::new(Expr::new(
-                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
-                0,
-                0,
-            )),
-        );
-        let correct_int_cast = CastExpr::Integer(
-            Box::new(Expr::new(
-                ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
-                0,
-                0,
-            )),
+        let correct_real_cast = CastExpr::Real(Box::new(Expr::new(
+            ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+            0,
+            0,
+        )));
+        let correct_int_cast = CastExpr::Integer(Box::new(Expr::new(
+            ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
+            0,
+            0,
+        )));
 
+        assert_eq!(
+            check_cast(&correct_real_cast, &table, &Location::new(0, 0)),
+            Ok(Kind::Real)
+        );
+        assert_eq!(
+            check_cast(&correct_int_cast, &table, &Location::new(0, 0)),
+            Ok(Kind::Int)
         );
 
-        assert_eq!(check_cast(&correct_real_cast, &table, &Location::new(0, 0)), Ok(Kind::Real));
-        assert_eq!(check_cast(&correct_int_cast, &table, &Location::new(0, 0)), Ok(Kind::Int));
-
-        let wrong_int_cast = CastExpr::Integer(
-            Box::new(Expr::new(
-                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
-                0,
-                0,
-            )),
-        );
-        let wrong_real_cast = CastExpr::Real(
-            Box::new(Expr::new(
-                ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
-                0,
-                0,
-            )),
-        );
+        let wrong_int_cast = CastExpr::Integer(Box::new(Expr::new(
+            ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+            0,
+            0,
+        )));
+        let wrong_real_cast = CastExpr::Real(Box::new(Expr::new(
+            ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
+            0,
+            0,
+        )));
 
         assert_eq!(
             check_cast(&wrong_int_cast, &table, &loc_int),
@@ -535,7 +532,6 @@ mod test {
                         56,
                         156,
                     )],
-                
                 ))),
                 0,
                 0,
@@ -592,7 +588,6 @@ mod test {
                         0,
                         0,
                     )],
-                    
                 ))),
                 156,
                 234,
@@ -645,7 +640,6 @@ mod test {
                         56,
                         100,
                     )],
-                    
                 ))),
                 56,
                 100,

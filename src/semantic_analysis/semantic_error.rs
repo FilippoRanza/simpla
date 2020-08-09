@@ -233,26 +233,28 @@ pub enum ForLoopErrorType<'a> {
 #[derive(PartialEq, Debug)]
 pub struct ReturnError<'a> {
     pub loc: &'a syntax_tree::Location,
-    pub error: ReturnErrorType
+    pub error: ReturnErrorType,
 }
 
 impl<'a> ReturnError<'a> {
     pub fn new_return_outside_function(loc: &'a syntax_tree::Location) -> Self {
         Self {
-            loc, 
-            error: ReturnErrorType::ReturnOutsideFunction
+            loc,
+            error: ReturnErrorType::ReturnOutsideFunction,
         }
     }
 
-    pub fn new_mismatched_type(loc: &'a syntax_tree::Location, decl: syntax_tree::Kind, given: syntax_tree::Kind) -> Self {
+    pub fn new_mismatched_type(
+        loc: &'a syntax_tree::Location,
+        decl: syntax_tree::Kind,
+        given: syntax_tree::Kind,
+    ) -> Self {
         Self {
-            loc, 
-            error: ReturnErrorType::MismatchedReturnType(decl, given)
+            loc,
+            error: ReturnErrorType::MismatchedReturnType(decl, given),
         }
     }
-    
 }
-
 
 #[derive(PartialEq, Debug)]
 pub enum ReturnErrorType {

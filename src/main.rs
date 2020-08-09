@@ -1,15 +1,15 @@
 use structopt::StructOpt;
-mod semantic_analysis;
 mod generator;
+mod semantic_analysis;
 use simpla_parser;
-use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 
 #[derive(StructOpt)]
 struct Arguments {
     source_file: PathBuf,
-    output_file: Option<PathBuf>
+    output_file: Option<PathBuf>,
 }
 
 fn load_file(file: &Path) -> std::io::Result<String> {
@@ -19,7 +19,6 @@ fn load_file(file: &Path) -> std::io::Result<String> {
 
     Ok(output)
 }
-
 
 fn get_file_name(arg: Arguments) -> PathBuf {
     if let Some(output) = arg.output_file {
@@ -46,7 +45,6 @@ fn save_to_file(arg: Arguments, code: Vec<u8>) -> std::io::Result<()> {
     Ok(())
 }
 
-
 fn compile(code: &str) -> Result<Vec<u8>, String> {
     let parser = simpla_parser::ProgramParser::new();
     let program = parser.parse(code).unwrap();
@@ -62,8 +60,8 @@ fn main() {
         Ok(byte_code) => {
             let res = save_to_file(args, byte_code);
             match res {
-                Ok(()) => {},
-                Err(io_err) => eprintln!("{}", io_err)
+                Ok(()) => {}
+                Err(io_err) => eprintln!("{}", io_err),
             };
         }
         Err(err_msg) => eprintln!("{}", err_msg),

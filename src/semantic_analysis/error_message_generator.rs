@@ -2,7 +2,6 @@ use super::extract_wrong_code::format_wrong_code;
 use super::semantic_error;
 use simpla_parser::syntax_tree;
 
-
 impl<'a> semantic_error::SemanticError<'a> {
     pub fn format_error(&self, code: &str) -> String {
         let msg = match self {
@@ -186,9 +185,10 @@ impl<'a> semantic_error::ReturnError<'a> {
     fn format_error(&self, code: &str) -> String {
         let token = format_wrong_code(code, self.loc);
         match &self.error {
-            semantic_error::ReturnErrorType::ReturnOutsideFunction => {
-                format!("return statement is not allowd in main body, only in function declaration:\n{}", token)
-            }
+            semantic_error::ReturnErrorType::ReturnOutsideFunction => format!(
+                "return statement is not allowd in main body, only in function declaration:\n{}",
+                token
+            ),
             semantic_error::ReturnErrorType::MismatchedReturnType(correct, given) => format!(
                 "return statement type: {}, but {} was expected:\n{}",
                 kind_to_string(&correct),
