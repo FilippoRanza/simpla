@@ -1,3 +1,5 @@
+mod c_generator;
 mod code_generator;
+mod translate;
 
-pub use code_generator::translate;
+pub use translate::translate_to_c;

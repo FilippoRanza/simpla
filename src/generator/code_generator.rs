@@ -1,20 +1,13 @@
-use simpla_parser::syntax_tree::*;
+use simpla_parser::syntax_tree::{FuncDecl, StatList, VarDeclList};
 
-pub fn translate(prog: &Program) -> Vec<u8> {
-    let mut output = Vec::new();
-
-    generate_variables(&prog.global_vars, &mut output);
-    generate_block(&prog.body, &mut output);
-    for func in &prog.functions {
-        generate_functions(func, &mut output)
-    }
-
-    output
+pub enum BlockType {
+    Main,
+    General
 }
 
-fn generate_functions(func: &FuncDecl, bytes: &mut Vec<u8>) {}
-
-fn generate_block(block: &StatList, bytes: &mut Vec<u8>) {}
-
-fn generate_variables(vars: &VarDeclList, bytes: &mut Vec<u8>) {}
-
+pub trait CodeGenerator {
+    fn gen_function(&mut self, func: &FuncDecl);
+    fn gen_block(&mut self, bloc: &StatList, block: BlockType);
+    fn gen_variables(&mut self, vars: &VarDeclList);
+    fn get_result(self) -> Vec<u8>;
+}

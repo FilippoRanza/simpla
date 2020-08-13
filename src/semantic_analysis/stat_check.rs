@@ -471,8 +471,8 @@ mod test {
         assert!(
             matches!(stat, Err(SemanticError::ReturnError(ReturnError{loc: _, error}))
                 if matches!(
-                    &error, 
-                    ReturnErrorType::MismatchedReturnType(correct, given) 
+                    &error,
+                    ReturnErrorType::MismatchedReturnType(correct, given)
                     if correct == &syntax_tree::Kind::Int && given == &syntax_tree::Kind::Real)
             )
         );
@@ -481,7 +481,7 @@ mod test {
         assert!(matches!(
             stat,
             Err(SemanticError::ReturnError(
-                ReturnError {loc: _, error}  
+                ReturnError {loc: _, error}
             )) if matches!(error, ReturnErrorType::ReturnOutsideFunction)
         ));
     }

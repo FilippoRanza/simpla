@@ -49,7 +49,7 @@ fn compile(code: &str) -> Result<Vec<u8>, String> {
     let parser = simpla_parser::ProgramParser::new();
     let program = parser.parse(code).unwrap();
     semantic_analysis::semantic_check(&program, code)?;
-    let output = generator::translate(&program);
+    let output = generator::translate_to_c(&program);
     Ok(output)
 }
 
