@@ -7,6 +7,9 @@ pub fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
     GlobalVariableTable::new()
 }
 
+type VarNameTable<'a> = NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>;
+
+
 pub trait VariableTable<'a> {
     fn insert_variable(
         &mut self,
@@ -17,7 +20,7 @@ pub trait VariableTable<'a> {
 }
 
 pub struct GlobalVariableTable<'a> {
-    global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+    global_table: VarNameTable<'a>,
 }
 
 impl<'a> GlobalVariableTable<'a> {
@@ -47,13 +50,13 @@ impl<'a> VariableTable<'a> for GlobalVariableTable<'a> {
 }
 
 pub struct FunctionTable<'a> {
-    global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+    global_table: VarNameTable<'a>,
     function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
 }
 
 impl<'a> FunctionTable<'a> {
     fn new(
-        global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+        global_table: VarNameTable<'a>,
     ) -> Self {
         Self {
             global_table,
@@ -80,13 +83,13 @@ impl<'a> FunctionTable<'a> {
 }
 
 pub struct FactoryLocalVariableTable<'a> {
-    global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+    global_table: VarNameTable<'a>,
     function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
 }
 
 impl<'b, 'a: 'b> FactoryLocalVariableTable<'a> {
     fn new(
-        global_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+        global_table: VarNameTable<'a>,
         function_table: NameTable<'a, &'a syntax_tree::FuncDecl>,
     ) -> Self {
         Self {
@@ -101,14 +104,14 @@ impl<'b, 'a: 'b> FactoryLocalVariableTable<'a> {
 }
 
 pub struct LocalVariableTable<'a> {
-    global_table: &'a NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+    global_table: &'a VarNameTable<'a>,
     function_table: &'a NameTable<'a, &'a syntax_tree::FuncDecl>,
-    local_table: NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+    local_table: VarNameTable<'a>,
 }
 
 impl<'a> LocalVariableTable<'a> {
     fn new(
-        global_table: &'a NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>,
+        global_table: &'a VarNameTable<'a>,
         function_table: &'a NameTable<'a, &'a syntax_tree::FuncDecl>,
     ) -> Self {
         Self {
