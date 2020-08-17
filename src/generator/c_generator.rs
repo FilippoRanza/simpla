@@ -44,7 +44,7 @@ impl CSourceGenerator {
             syntax_tree::StatType::FuncCall(call) => {
                 let tmp = self.convert_func_call(call);
                 format!("{};", tmp)
-            },
+            }
             syntax_tree::StatType::Break => self.convert_break_stat(),
         }
     }
@@ -108,21 +108,27 @@ impl CSourceGenerator {
     }
 
     fn generate_printf(&self, expr_list: &syntax_tree::ExprList) -> String {
-        let spec_string = self.generate_printf_specifier(expr_list);
-        let expr_code = self.convert_expression_list(expr_list);
+        if expr_list.len() == 0 {
+            String::new()
+        } else {
+            let spec_string = self.generate_printf_specifier(expr_list);
+            let expr_code = self.convert_expression_list(expr_list);
 
-        format!(r#"printf("{}", {});"#, spec_string, expr_code)
+            format!(r#"printf("{}", {});"#, spec_string, expr_code)
+        }
     }
 
-    fn generate_printf_specifier(&self, expr_list: &syntax_tree::ExprList) -> String{
-
+    fn generate_printf_specifier(&self, expr_list: &syntax_tree::ExprList) -> String {
         //each printf specifier requires 2 characters plus one spece
         let mut output = String::with_capacity(expr_list.len() * 3);
         for expr in expr_list {
-            let tmp = format!("{} ", printf_type_specifier(expr.kind.borrow().as_ref().unwrap()));
+            let tmp = format!(
+                "{} ",
+                printf_type_specifier(expr.kind.borrow().as_ref().unwrap())
+            );
             output.push_str(&tmp);
         }
-        
+
         output
     }
 
@@ -224,7 +230,7 @@ impl CodeGenerator for CSourceGenerator {
 
         let code = match block_type {
             BlockType::General => code,
-            BlockType::Main => format!("int main(){{\n{}\nreturn 0;\n}}", code)
+            BlockType::Main => format!("int main(){{\n{}\nreturn 0;\n}}", code),
         };
 
         self.buff.push(code);
@@ -297,18 +303,20 @@ fn printf_type_specifier(kind: &syntax_tree::Kind) -> &'static str {
     }
 }
 
-
 fn join_list<T, F>(list: &[T], convert: F) -> String
-where F: Fn (&T) -> String {
-    list.iter().map(|i| convert(i)).fold(String::new(), |acc, curr| {
-        if acc.len() > 0 {
-            format!("{}, {}", acc, curr)
-        } else {
-            curr.to_owned()
-        }
-    })    
+where
+    F: Fn(&T) -> String,
+{
+    list.iter()
+        .map(|i| convert(i))
+        .fold(String::new(), |acc, curr| {
+            if acc.len() > 0 {
+                format!("{}, {}", acc, curr)
+            } else {
+                curr.to_owned()
+            }
+        })
 }
-
 
 #[cfg(test)]
 mod test {
@@ -322,8 +330,4 @@ mod test {
         let join = join_list(&list, |n| format!("{}", n));
         assert_eq!(join, "2, 3, 4, 5, 6");
     }
-
 }
-
-
-

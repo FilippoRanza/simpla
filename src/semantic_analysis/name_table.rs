@@ -9,7 +9,6 @@ pub fn name_table_factory<'a>() -> GlobalVariableTable<'a> {
 
 type VarNameTable<'a> = NameTable<'a, (&'a syntax_tree::Kind, &'a syntax_tree::Location)>;
 
-
 pub trait VariableTable<'a> {
     fn insert_variable(
         &mut self,
@@ -55,9 +54,7 @@ pub struct FunctionTable<'a> {
 }
 
 impl<'a> FunctionTable<'a> {
-    fn new(
-        global_table: VarNameTable<'a>,
-    ) -> Self {
+    fn new(global_table: VarNameTable<'a>) -> Self {
         Self {
             global_table,
             function_table: NameTable::new(Entry::Function),

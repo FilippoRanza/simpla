@@ -2,7 +2,7 @@ use simpla_parser::syntax_tree::{FuncDecl, StatList, VarDeclList};
 
 pub enum BlockType {
     Main,
-    General
+    General,
 }
 
 pub trait CodeGenerator {
