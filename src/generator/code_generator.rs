@@ -5,9 +5,14 @@ pub enum BlockType {
     General,
 }
 
-pub trait CodeGenerator {
-    fn gen_function(&mut self, func: &FuncDecl);
-    fn gen_block(&mut self, bloc: &StatList, block: BlockType);
-    fn gen_variables(&mut self, vars: &VarDeclList);
+pub enum Scope {
+    Global,
+    Local
+}
+
+pub trait CodeGenerator<'a> {
+    fn gen_function(&mut self, func: &'a FuncDecl);
+    fn gen_block(&mut self, bloc: &'a StatList, block: BlockType);
+    fn gen_variables(&mut self, vars: &'a VarDeclList, scope: Scope);
     fn get_result(self) -> Vec<u8>;
 }

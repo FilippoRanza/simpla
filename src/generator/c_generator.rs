@@ -1,13 +1,17 @@
 use super::code_generator::*;
+use super::var_cache::VarCache;
 use simpla_parser::syntax_tree;
 
-pub struct CSourceGenerator {
+
+
+pub struct CSourceGenerator<'a> {
     buff: Vec<String>,
+    var_cache: VarCache<'a>
 }
 
-impl CSourceGenerator {
+impl<'a> CSourceGenerator<'a> {
     pub fn new() -> Self {
-        Self { buff: Vec::new() }
+        Self { buff: Vec::new(), var_cache : VarCache::new() }
     }
 
     fn open_block(&mut self) {
@@ -94,7 +98,12 @@ impl CSourceGenerator {
     }
 
     fn convert_read_stat(&self, read: &syntax_tree::IdList) -> String {
-        String::new()
+        let mut read_stats = Vec::new();
+        for id in read {
+            let stat = convert_read_stat(id, self.var_cache.lookup(id));
+            read_stats.push(stat);
+        }
+        read_stats.join("\n")
     }
 
     fn convert_write_stat(&self, write: &syntax_tree::WriteStat) -> String {
@@ -215,14 +224,15 @@ impl CSourceGenerator {
     }
 }
 
-impl CodeGenerator for CSourceGenerator {
-    fn gen_function(&mut self, func: &syntax_tree::FuncDecl) {
+impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
+    fn gen_function(&mut self, func: &'a syntax_tree::FuncDecl) {
         let signature = make_function_signature(func);
         self.buff.push(signature);
         self.open_block();
-        self.gen_variables(&func.vars);
+        self.gen_variables(&func.vars, Scope::Local);
         self.gen_block(&func.body, BlockType::General);
         self.close_block();
+        self.var_cache.clear_local_vars();
     }
 
     fn gen_block(&mut self, block: &syntax_tree::StatList, block_type: BlockType) {
@@ -236,12 +246,16 @@ impl CodeGenerator for CSourceGenerator {
         self.buff.push(code);
     }
 
-    fn gen_variables(&mut self, var_decl_list: &syntax_tree::VarDeclList) {
+    fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
         for var_decl in var_decl_list {
             let type_names = convert_to_c_types(&var_decl.kind);
             let names = var_decl.id_list.join(", ");
             let code = format!("{} {};", type_names, names);
             self.buff.push(code);
+        }
+        match scope {
+            Scope::Global => self.var_cache.cache_global_vars(var_decl_list),
+            Scope::Local => self.var_cache.cache_local_vars(var_decl_list)
         }
     }
     fn get_result(self) -> Vec<u8> {
@@ -302,6 +316,17 @@ fn printf_type_specifier(kind: &syntax_tree::Kind) -> &'static str {
         syntax_tree::Kind::Void => panic!(),
     }
 }
+
+fn convert_read_stat(id: &str, kind: &syntax_tree::Kind) -> String{
+    match kind {
+        syntax_tree::Kind::Bool => format!("{} = ___read_bool();", id),
+        syntax_tree::Kind::Int => format!("{} = ___read_int();", id),
+        syntax_tree::Kind::Real => format!("{} = ___read_double();", id),
+        syntax_tree::Kind::Str => format!("___read_str({});", id),
+        syntax_tree::Kind::Void => panic!(),
+    }
+}
+
 
 fn join_list<T, F>(list: &[T], convert: F) -> String
 where
