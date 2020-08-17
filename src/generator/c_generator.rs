@@ -2,6 +2,67 @@ use super::code_generator::*;
 use super::var_cache::VarCache;
 use simpla_parser::syntax_tree;
 
+const HEADER: &'static str = r#"
+#include <stdio.h>
+#include <stdlib.h>
+
+#define TRUE 1
+#define FALSE 0
+#define BUFF_SIZE 1024
+
+char* ___INPUT_BUFFER = NULL;
+
+
+char* ___alloc_buffer(int input) {
+
+    if(input) {
+        if(___INPUT_BUFFER != NULL) {
+            return ___INPUT_BUFFER;
+        }
+    }
+
+    char* output = calloc(BUFF_SIZE, sizeof(char));
+    if(output == NULL) {
+        fprintf(stderr, "cannot allocate buffer of size: %d", BUFF_SIZE);
+        abort();
+    }
+
+    if(input) {
+        ___INPUT_BUFFER = output;
+    }
+    return output;
+}
+
+
+void ___read_buffer() {
+    char* tmp = ___alloc_buffer(TRUE);
+    int c;
+    int count = BUFF_SIZE - 1;
+    while((c = getchar()) && c != EOF && c != '\n' && count--) 
+        *tmp++ = c;
+    *tmp = '\0';
+}
+
+
+char ___read_bool() {
+    ___read_buffer();
+    int tmp = atoi(___INPUT_BUFFER);
+    return tmp ? TRUE : FALSE;
+}
+
+int ___read_int() {
+    ___read_buffer();
+    return atoi(___INPUT_BUFFER);
+}
+
+double ___read_double() {
+    ___read_buffer();
+    return atof(___INPUT_BUFFER);
+}
+
+void ___read_str(char* str) {}
+
+"#;
 
 
 pub struct CSourceGenerator<'a> {
@@ -260,7 +321,7 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
     }
     fn get_result(self) -> Vec<u8> {
         let code = self.buff.join("\n");
-        let program = format!("#include <stdio.h>\n#include <stdlib.h>\n\n{}", code);
+        let program = format!("{}\n\n{}", HEADER, code);
         program.into_bytes()
     }
 }
