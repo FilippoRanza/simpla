@@ -1,3 +1,6 @@
+
+use std::cell::RefCell;
+
 #[derive(PartialEq, Debug)]
 pub struct Program {
     pub global_vars: VarDeclList,
@@ -222,6 +225,7 @@ impl FuncCall {
 pub struct Expr {
     pub loc: Location,
     pub expr: ExprTree,
+    pub kind: RefCell<Option<Kind>>
 }
 
 impl Expr {
@@ -229,6 +233,7 @@ impl Expr {
         Self {
             expr,
             loc: Location::new(begin, end),
+            kind: RefCell::new(None)
         }
     }
 }

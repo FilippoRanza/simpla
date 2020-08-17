@@ -98,7 +98,32 @@ impl CSourceGenerator {
     }
 
     fn convert_write_stat(&self, write: &syntax_tree::WriteStat) -> String {
-        String::new()
+        match write {
+            syntax_tree::WriteStat::Write(expr) => self.generate_printf(expr),
+            syntax_tree::WriteStat::WriteLine(expr) => {
+                let printf = self.generate_printf(expr);
+                format!(r"{} putchar('\n');", printf)
+            }
+        }
+    }
+
+    fn generate_printf(&self, expr_list: &syntax_tree::ExprList) -> String {
+        let spec_string = self.generate_printf_specifier(expr_list);
+        let expr_code = self.convert_expression_list(expr_list);
+
+        format!(r#"printf("{}", {});"#, spec_string, expr_code)
+    }
+
+    fn generate_printf_specifier(&self, expr_list: &syntax_tree::ExprList) -> String{
+
+        //each printf specifier requires 2 characters plus one spece
+        let mut output = String::with_capacity(expr_list.len() * 3);
+        for expr in expr_list {
+            let tmp = format!("{} ", printf_type_specifier(expr.kind.borrow().as_ref().unwrap()));
+            output.push_str(&tmp);
+        }
+        
+        output
     }
 
     fn convert_func_call(&self, f_call: &syntax_tree::FuncCall) -> String {
@@ -154,7 +179,7 @@ impl CSourceGenerator {
             }
             syntax_tree::Const::IntConst(i) => format!("{}", i),
             syntax_tree::Const::RealConst(r) => format!("{}", r),
-            syntax_tree::Const::StrConst(s) => s.to_owned(),
+            syntax_tree::Const::StrConst(s) => format!(r#""{}""#, s),
         }
     }
 
@@ -259,6 +284,16 @@ fn convert_to_c_operator(op: &syntax_tree::Operator) -> &'static str {
         syntax_tree::Operator::Div => "/",
         syntax_tree::Operator::And => "&&",
         syntax_tree::Operator::Or => "||",
+    }
+}
+
+fn printf_type_specifier(kind: &syntax_tree::Kind) -> &'static str {
+    match kind {
+        syntax_tree::Kind::Bool => "%c",
+        syntax_tree::Kind::Int => "%d",
+        syntax_tree::Kind::Real => "%f",
+        syntax_tree::Kind::Str => "%s",
+        syntax_tree::Kind::Void => panic!(),
     }
 }
 

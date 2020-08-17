@@ -18,7 +18,7 @@ pub fn type_check<'a>(
     expr: &'a syntax_tree::Expr,
     table: &'a LocalVariableTable,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
-    match &expr.expr {
+    let kind = match &expr.expr {
         syntax_tree::ExprTree::Node(left, op, right) => {
             let left_type = type_check(left, table)?;
             let right_type = type_check(right, table)?;
@@ -26,7 +26,9 @@ pub fn type_check<'a>(
             Ok(output)
         }
         syntax_tree::ExprTree::Factor(fact) => check_factor(fact, table, &expr.loc),
-    }
+    }?;
+    *expr.kind.borrow_mut() = Some(kind.clone());
+    Ok(kind)
 }
 
 enum OperatorKind {
