@@ -1,0 +1,49 @@
+
+i, count: integer;
+
+func iter_add_series(a: integer, b: integer, n: integer): integer
+    tmp: integer;
+body
+    while n > 0 do
+        tmp = a + b;
+        a = b;
+        b = tmp;
+        n = n - 1;
+    end;
+    return a;
+end;
+
+body
+    writeln("Compute Fibonacci and Lucas Numbers");
+    write("Upper Limit [integer]: ");
+    read(count);
+
+    writeln("Fibonacci");
+    for i = 0 to count do
+        # Fibonacci nubers start with 0 and 1
+        write(iter_add_series(0, 1, i));
+    end;
+    writeln();
+
+    writeln("Lucas");
+    for i = 0 to count do
+        # Lucas numbers start with 2 and 1
+        write(iter_add_series(2, 1, i));
+    end;
+    writeln();
+end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
