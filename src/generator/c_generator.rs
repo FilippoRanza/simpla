@@ -10,16 +10,10 @@ const HEADER: &'static str = r#"
 #define FALSE 0
 #define BUFF_SIZE 1024
 
-char* ___INPUT_BUFFER = NULL;
+char* _INPUT_BUFFER = NULL;
 
 
-char* ___alloc_buffer(int input) {
-
-    if(input) {
-        if(___INPUT_BUFFER != NULL) {
-            return ___INPUT_BUFFER;
-        }
-    }
+char* _alloc_buffer() {
 
     char* output = calloc(BUFF_SIZE, sizeof(char));
     if(output == NULL) {
@@ -27,15 +21,12 @@ char* ___alloc_buffer(int input) {
         abort();
     }
 
-    if(input) {
-        ___INPUT_BUFFER = output;
-    }
     return output;
 }
 
 
-void ___read_buffer() {
-    char* tmp = ___alloc_buffer(TRUE);
+void _read_buffer() {
+    char* tmp = _INPUT_BUFFER;
     int c;
     int count = BUFF_SIZE - 1;
     while((c = getchar()) && c != EOF && c != '\n' && count--) 
@@ -44,25 +35,36 @@ void ___read_buffer() {
 }
 
 
-char ___read_bool() {
-    ___read_buffer();
-    int tmp = atoi(___INPUT_BUFFER);
+char _read_bool() {
+    _read_buffer(_INPUT_BUFFER);
+    int tmp = atoi(_INPUT_BUFFER);
     return tmp ? TRUE : FALSE;
 }
 
-int ___read_int() {
-    ___read_buffer();
-    return atoi(___INPUT_BUFFER);
+int _read_int() {
+    _read_buffer(_INPUT_BUFFER);
+    return atoi(_INPUT_BUFFER);
 }
 
-double ___read_double() {
-    ___read_buffer();
-    return atof(___INPUT_BUFFER);
+double _read_double() {
+    _read_buffer(_INPUT_BUFFER);
+    return atof(_INPUT_BUFFER);
 }
 
-void ___read_str(char* str) {}
+void _read_str(char* str) {
+    _read_buffer(str);
+}
+
+void _initialize() {
+    _INPUT_BUFFER = _alloc_buffer();
+}
+
+void _finalize() {
+    free(_INPUT_BUFFER);
+}
 
 "#;
+
 
 
 pub struct CSourceGenerator<'a> {
@@ -301,7 +303,7 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
 
         let code = match block_type {
             BlockType::General => code,
-            BlockType::Main => format!("int main(){{\n{}\nreturn 0;\n}}", code),
+            BlockType::Main => format!("int main(){{\n_initialize();\n{}\n_finalize();\nreturn 0;\n}}", code),
         };
 
         self.buff.push(code);
@@ -380,10 +382,10 @@ fn printf_type_specifier(kind: &syntax_tree::Kind) -> &'static str {
 
 fn convert_read_stat(id: &str, kind: &syntax_tree::Kind) -> String{
     match kind {
-        syntax_tree::Kind::Bool => format!("{} = ___read_bool();", id),
-        syntax_tree::Kind::Int => format!("{} = ___read_int();", id),
-        syntax_tree::Kind::Real => format!("{} = ___read_double();", id),
-        syntax_tree::Kind::Str => format!("___read_str({});", id),
+        syntax_tree::Kind::Bool => format!("{} = _read_bool();", id),
+        syntax_tree::Kind::Int => format!("{} = _read_int();", id),
+        syntax_tree::Kind::Real => format!("{} = _read_double();", id),
+        syntax_tree::Kind::Str => format!("_read_str({});", id),
         syntax_tree::Kind::Void => panic!(),
     }
 }
