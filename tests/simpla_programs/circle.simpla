@@ -1,0 +1,16 @@
+# Compute Area and Circumference of a circle
+
+pi, radius : real;
+
+body
+
+    pi = 3.141592653;
+
+    writeln("Compute area and circumference of a Circle");
+    write("insert circle radius:" );
+    read(radius);
+
+    writeln("Area:", radius * radius * pi);
+    writeln("Circumference:", 2.0 * radius * pi);
+
+end.

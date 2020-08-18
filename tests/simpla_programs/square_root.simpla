@@ -1,0 +1,49 @@
+# Calculate the square root of a given number 
+# using Newton-Raphson method
+
+number, result: real;
+
+func abs(x: real) : real
+body
+    return if x < 0.0 then 
+           -x
+        else 
+            x
+        end;
+end;
+
+
+func square_root(x: real, iters: integer, error: real) : real
+    count: integer;
+    next, base: real;
+body
+    # NR method is root-finding algorithm. Usually it is implemented
+    # to take as input also f(x) and df(x) [function and its first derivative].
+    # It heppens that the solution of x^2 - k = 0 is exactly x = sqrt(k)
+    # This function hardcode the NR method for f(x) = x^2 - k in order 
+    # to find the squere root of its argument.
+
+    base = x;
+    for count = 0 to iters do
+        next = x - ((x * x - base) / (2.0 * x));
+        if (error > abs(next - x)) then
+            break;
+        end;
+        x = next;
+    end;
+    return x;
+end;
+
+
+body
+
+    writeln("Calculate the square root of a given number");
+    write("insert a number: ");
+    read(number);
+
+    # Hardcode max iteration to 150 and precision to 1e-8
+    result = square_root(number, 150, 0.00000001);
+
+    writeln("square root of", number, "is", result);
+
+end.
