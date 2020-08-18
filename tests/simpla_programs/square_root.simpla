@@ -41,9 +41,16 @@ body
     write("insert a number: ");
     read(number);
 
-    # Hardcode max iteration to 150 and precision to 1e-8
-    result = square_root(number, 150, 0.00000001);
-
-    writeln("square root of", number, "is", result);
+    if (number < 0.0) then 
+        writeln("Wrong input:", number, "the square root of a negative number is not defined in the real domain");
+    else 
+        # Hardcode max iteration to 150 and precision to 1e-8
+        result = square_root(number, 150, 0.00000001);
+        
+        writeln("square root of", number, "is", result);
+    end;
+    
+    
+    
 
 end.
