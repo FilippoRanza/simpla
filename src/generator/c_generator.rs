@@ -65,6 +65,7 @@ void _finalize() {
 
 "#;
 
+const ID_HEADER : &'static str = "__";
 
 
 pub struct CSourceGenerator<'a> {
@@ -117,7 +118,7 @@ impl<'a> CSourceGenerator<'a> {
     }
 
     fn convert_assign_stat(&self, assign: &syntax_tree::AssignStat) -> String {
-        format!("{} = {};", assign.id, self.convert_expression(&assign.expr))
+        format!("{} = {};", convert_id(ID_HEADER, &assign.id), self.convert_expression(&assign.expr))
     }
 
     fn convert_if_stat(&self, if_stat: &syntax_tree::IfStat) -> String {
@@ -147,7 +148,7 @@ impl<'a> CSourceGenerator<'a> {
 
         format!(
             "for({0} = {1}; {0} < {2}; {0}++) {{ {3} }}",
-            for_stat.id, begin, end, body
+            convert_id(ID_HEADER, &for_stat.id), begin, end, body
         )
     }
 
@@ -163,7 +164,8 @@ impl<'a> CSourceGenerator<'a> {
     fn convert_read_stat(&self, read: &syntax_tree::IdList) -> String {
         let mut read_stats = Vec::new();
         for id in read {
-            let stat = convert_read_stat(id, self.var_cache.lookup(id));
+            let c_id = convert_id(ID_HEADER, id);
+            let stat = convert_read_stat(&c_id, self.var_cache.lookup(id));
             read_stats.push(stat);
         }
         read_stats.join("\n")
@@ -207,7 +209,7 @@ impl<'a> CSourceGenerator<'a> {
     fn convert_func_call(&self, f_call: &syntax_tree::FuncCall) -> String {
         format!(
             "{}({})",
-            f_call.id,
+            convert_id(ID_HEADER, &f_call.id),
             self.convert_expression_list(&f_call.args)
         )
     }
@@ -234,7 +236,7 @@ impl<'a> CSourceGenerator<'a> {
 
     fn convert_factor(&self, fact: &syntax_tree::Factor) -> String {
         match fact {
-            syntax_tree::Factor::Id(id) => id.clone(),
+            syntax_tree::Factor::Id(id) => convert_id(ID_HEADER, id),
             syntax_tree::Factor::UnaryOp(unary) => self.convert_unary_operator(unary),
             syntax_tree::Factor::CondExpr(cond) => self.convert_cond_expr(cond),
             syntax_tree::Factor::CastExpr(cast) => self.convert_cast_expr(cast),
@@ -312,7 +314,7 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
     fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
         for var_decl in var_decl_list {
             let type_names = convert_to_c_types(&var_decl.kind);
-            let names = var_decl.id_list.join(", ");
+            let names = join_list(&var_decl.id_list, |id| convert_id(ID_HEADER, id));
             let code = format!("{} {};", type_names, names);
             self.buff.push(code);
         }
@@ -331,7 +333,8 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
 fn make_function_signature(f_decl: &syntax_tree::FuncDecl) -> String {
     let type_name = convert_to_c_types(&f_decl.kind);
     let params = convert_param_list(&f_decl.params);
-    format!("{} {}({})", type_name, f_decl.id, params)
+    let id = convert_id(ID_HEADER, &f_decl.id);
+    format!("{} {}({})", type_name, id, params)
 }
 
 fn convert_param_list(params: &syntax_tree::ParamList) -> String {
@@ -340,7 +343,8 @@ fn convert_param_list(params: &syntax_tree::ParamList) -> String {
 
 fn convert_param(param: &syntax_tree::ParamDecl) -> String {
     let tn = convert_to_c_types(&param.kind);
-    format!("{} {}", tn, param.id)
+    let param_id = convert_id(ID_HEADER, &param.id);
+    format!("{} {}", tn, param_id)
 }
 
 fn convert_to_c_types(k: &syntax_tree::Kind) -> &'static str {
@@ -390,6 +394,9 @@ fn convert_read_stat(id: &str, kind: &syntax_tree::Kind) -> String{
     }
 }
 
+fn convert_id(head: &str, id: &str) -> String {
+    format!("{}{}", head, id)
+}
 
 fn join_list<T, F>(list: &[T], convert: F) -> String
 where
