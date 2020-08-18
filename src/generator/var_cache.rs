@@ -4,8 +4,6 @@ use simpla_parser::syntax_tree::{Kind, VarDecl, VarDeclList};
 
 type NameMap<'a> = HashMap<&'a str, Kind>;
 
-
-
 pub struct VarCache<'a> {
     global_vars: NameMap<'a>,
     local_vars: NameMap<'a>,
@@ -15,7 +13,7 @@ impl<'a> VarCache<'a> {
     pub fn new() -> Self {
         Self {
             global_vars: HashMap::new(),
-            local_vars: HashMap::new()
+            local_vars: HashMap::new(),
         }
     }
 

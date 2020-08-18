@@ -65,17 +65,19 @@ void _finalize() {
 
 "#;
 
-const ID_HEADER : &'static str = "__";
-
+const ID_HEADER: &'static str = "__";
 
 pub struct CSourceGenerator<'a> {
     buff: Vec<String>,
-    var_cache: VarCache<'a>
+    var_cache: VarCache<'a>,
 }
 
 impl<'a> CSourceGenerator<'a> {
     pub fn new() -> Self {
-        Self { buff: Vec::new(), var_cache : VarCache::new() }
+        Self {
+            buff: Vec::new(),
+            var_cache: VarCache::new(),
+        }
     }
 
     fn open_block(&mut self) {
@@ -118,7 +120,11 @@ impl<'a> CSourceGenerator<'a> {
     }
 
     fn convert_assign_stat(&self, assign: &syntax_tree::AssignStat) -> String {
-        format!("{} = {};", convert_id(ID_HEADER, &assign.id), self.convert_expression(&assign.expr))
+        format!(
+            "{} = {};",
+            convert_id(ID_HEADER, &assign.id),
+            self.convert_expression(&assign.expr)
+        )
     }
 
     fn convert_if_stat(&self, if_stat: &syntax_tree::IfStat) -> String {
@@ -148,7 +154,10 @@ impl<'a> CSourceGenerator<'a> {
 
         format!(
             "for({0} = {1}; {0} < {2}; {0}++) {{ {3} }}",
-            convert_id(ID_HEADER, &for_stat.id), begin, end, body
+            convert_id(ID_HEADER, &for_stat.id),
+            begin,
+            end,
+            body
         )
     }
 
@@ -305,7 +314,10 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
 
         let code = match block_type {
             BlockType::General => code,
-            BlockType::Main => format!("int main(){{\n_initialize();\n{}\n_finalize();\nreturn 0;\n}}", code),
+            BlockType::Main => format!(
+                "int main(){{\n_initialize();\n{}\n_finalize();\nreturn 0;\n}}",
+                code
+            ),
         };
 
         self.buff.push(code);
@@ -320,7 +332,7 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
         }
         match scope {
             Scope::Global => self.var_cache.cache_global_vars(var_decl_list),
-            Scope::Local => self.var_cache.cache_local_vars(var_decl_list)
+            Scope::Local => self.var_cache.cache_local_vars(var_decl_list),
         }
     }
     fn get_result(self) -> Vec<u8> {
@@ -384,7 +396,7 @@ fn printf_type_specifier(kind: &syntax_tree::Kind) -> &'static str {
     }
 }
 
-fn convert_read_stat(id: &str, kind: &syntax_tree::Kind) -> String{
+fn convert_read_stat(id: &str, kind: &syntax_tree::Kind) -> String {
     match kind {
         syntax_tree::Kind::Bool => format!("{} = _read_bool();", id),
         syntax_tree::Kind::Int => format!("{} = _read_int();", id),

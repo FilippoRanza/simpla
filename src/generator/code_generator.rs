@@ -7,7 +7,7 @@ pub enum BlockType {
 
 pub enum Scope {
     Global,
-    Local
+    Local,
 }
 
 pub trait CodeGenerator<'a> {
