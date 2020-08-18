@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use simpla_parser::syntax_tree::{Kind, VarDecl, VarDeclList};
+use simpla_parser::syntax_tree::{Kind, VarDecl, VarDeclList, ParamList};
 
 type NameMap<'a> = HashMap<&'a str, Kind>;
 
@@ -19,6 +19,12 @@ impl<'a> VarCache<'a> {
 
     pub fn cache_global_vars(&mut self, var_decl_list: &'a VarDeclList) {
         cache_var_decl_list(var_decl_list, &mut self.global_vars);
+    }
+
+    pub fn cache_params(&mut self, param_decl_list: &'a ParamList) {
+        for param in param_decl_list {
+            self.local_vars.insert(&param.id, param.kind.clone());
+        }
     }
 
     pub fn cache_local_vars(&mut self, var_decl_list: &'a VarDeclList) {

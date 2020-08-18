@@ -25,8 +25,8 @@ char* _alloc_buffer() {
 }
 
 
-void _read_buffer() {
-    char* tmp = _INPUT_BUFFER;
+void _read_buffer(char* buff) {
+    char* tmp = buff;
     int c;
     int count = BUFF_SIZE - 1;
     while((c = getchar()) && c != EOF && c != '\n' && count--) 
@@ -51,8 +51,12 @@ double _read_double() {
     return atof(_INPUT_BUFFER);
 }
 
-void _read_str(char* str) {
+char* _read_str(char* str) {
+    if(str == NULL) {
+        str = _alloc_buffer();
+    }
     _read_buffer(str);
+    return str;
 }
 
 void _initialize() {
@@ -61,6 +65,12 @@ void _initialize() {
 
 void _finalize() {
     free(_INPUT_BUFFER);
+}
+
+void _free_str(char* str) {
+    if(str != NULL) {
+        free(str);
+    }
 }
 
 "#;
@@ -301,6 +311,7 @@ impl<'a> CSourceGenerator<'a> {
 impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
     fn gen_function(&mut self, func: &'a syntax_tree::FuncDecl) {
         let signature = make_function_signature(func);
+        self.var_cache.cache_params(&func.params);
         self.buff.push(signature);
         self.open_block();
         self.gen_variables(&func.vars, Scope::Local);
@@ -325,10 +336,13 @@ impl<'a> CodeGenerator<'a> for CSourceGenerator<'a> {
 
     fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
         for var_decl in var_decl_list {
-            let type_names = convert_to_c_types(&var_decl.kind);
-            let names = join_list(&var_decl.id_list, |id| convert_id(ID_HEADER, id));
-            let code = format!("{} {};", type_names, names);
-            self.buff.push(code);
+            let type_name = convert_to_c_types(&var_decl.kind);
+            let def_val = default_value(&var_decl.kind);
+            for decl in &var_decl.id_list {
+                let id = convert_id(ID_HEADER, decl);
+                let code = format!("{} {} = {};", type_name, id, def_val);
+                self.buff.push(code);
+            }
         }
         match scope {
             Scope::Global => self.var_cache.cache_global_vars(var_decl_list),
@@ -401,7 +415,17 @@ fn convert_read_stat(id: &str, kind: &syntax_tree::Kind) -> String {
         syntax_tree::Kind::Bool => format!("{} = _read_bool();", id),
         syntax_tree::Kind::Int => format!("{} = _read_int();", id),
         syntax_tree::Kind::Real => format!("{} = _read_double();", id),
-        syntax_tree::Kind::Str => format!("_read_str({});", id),
+        syntax_tree::Kind::Str => format!("{0} = _read_str({0});", id),
+        syntax_tree::Kind::Void => panic!(),
+    }
+}
+
+fn default_value(kind: &syntax_tree::Kind) -> &'static str {
+    match kind {
+        syntax_tree::Kind::Bool => "FALSE",
+        syntax_tree::Kind::Int => "0",
+        syntax_tree::Kind::Real => "0.0",
+        syntax_tree::Kind::Str => "NULL",
         syntax_tree::Kind::Void => panic!(),
     }
 }
