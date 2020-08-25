@@ -21,12 +21,9 @@ fn test_source_c_translation() {
         let (c_source, target) = get_c_file_name(&file, &target_dir.path());
         let output = Command::new("cargo").arg("run").arg("--").arg("compile").arg(file).arg(&c_source).output();
         assert!(output.unwrap().status.success());
-        let output = Command::new("cc").arg(&c_source).arg("-o").arg(target).output();
-        assert!(output.unwrap().status.success());
+        let output = Command::new("cc").arg(&c_source).arg("-o").arg(target).output().unwrap();
+        assert!(output.status.success(), "STDOUT:\n{}\nSTDERR:\n{}\n", string(&output.stdout), string(&output.stderr));
     }
-
-
-
 }
 
 fn get_c_file_name(file: &Path, root: &Path) -> (PathBuf, PathBuf) {
@@ -37,7 +34,10 @@ fn get_c_file_name(file: &Path, root: &Path) -> (PathBuf, PathBuf) {
     (root.join(name), root.join(base_name))
 }
 
-
+fn string(v: &[u8]) -> &str {
+    std::str::from_utf8(v).unwrap()
+}
+ 
 
 #[test]
 fn test_source_check() {

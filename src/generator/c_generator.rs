@@ -2,78 +2,7 @@ use super::code_generator::*;
 use super::var_cache::VarCache;
 use simpla_parser::syntax_tree;
 
-const HEADER: &'static str = r#"
-#include <stdio.h>
-#include <stdlib.h>
-
-#define TRUE 1
-#define FALSE 0
-#define BUFF_SIZE 1024
-
-char* _INPUT_BUFFER = NULL;
-
-
-char* _alloc_buffer() {
-
-    char* output = calloc(BUFF_SIZE, sizeof(char));
-    if(output == NULL) {
-        fprintf(stderr, "cannot allocate buffer of size: %d", BUFF_SIZE);
-        abort();
-    }
-
-    return output;
-}
-
-
-void _read_buffer(char* buff) {
-    char* tmp = buff;
-    int c;
-    int count = BUFF_SIZE - 1;
-    while((c = getchar()) && c != EOF && c != '\n' && count--) 
-        *tmp++ = c;
-    *tmp = '\0';
-}
-
-
-char _read_bool() {
-    _read_buffer(_INPUT_BUFFER);
-    int tmp = atoi(_INPUT_BUFFER);
-    return tmp ? TRUE : FALSE;
-}
-
-int _read_int() {
-    _read_buffer(_INPUT_BUFFER);
-    return atoi(_INPUT_BUFFER);
-}
-
-double _read_double() {
-    _read_buffer(_INPUT_BUFFER);
-    return atof(_INPUT_BUFFER);
-}
-
-char* _read_str(char* str) {
-    if(str == NULL) {
-        str = _alloc_buffer();
-    }
-    _read_buffer(str);
-    return str;
-}
-
-void _initialize() {
-    _INPUT_BUFFER = _alloc_buffer();
-}
-
-void _finalize() {
-    free(_INPUT_BUFFER);
-}
-
-void _free_str(char* str) {
-    if(str != NULL) {
-        free(str);
-    }
-}
-
-"#;
+const HEADER: &'static str = std::include_str!("header.c");
 
 const ID_HEADER: &'static str = "__";
 

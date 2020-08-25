@@ -1,5 +1,4 @@
 /target
 Cargo.lock
 *.simplac
-*.c
 a.out
