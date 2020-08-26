@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use super::simple_counter::SimpleCounter;
 use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList};
 
 pub struct VarCache<'a> {
@@ -120,26 +121,6 @@ impl KindCounter {
     }
 }
 
-struct SimpleCounter {
-    counter: u16,
-}
-
-impl SimpleCounter {
-    fn new() -> Self {
-        Self { counter: 0 }
-    }
-
-    fn count_one(&mut self) -> u16 {
-        let output = self.counter;
-        self.counter += 1;
-        output
-    }
-
-    fn reset(&mut self) {
-        self.counter = 0;
-    }
-}
-
 #[cfg(test)]
 mod test {
 
@@ -160,17 +141,6 @@ mod test {
     }
 
     #[test]
-    fn test_simple_counter() {
-        let mut counter = SimpleCounter::new();
-        for i in 0..10 {
-            assert_eq!(i, counter.count_one());
-        }
-        assert_eq!(counter.counter, 10);
-        counter.reset();
-        assert_eq!(counter.counter, 0);
-    }
-
-    #[test]
     fn test_kind_counter() {
         let mut counter = KindCounter::new();
 
@@ -180,10 +150,6 @@ mod test {
         }
 
         counter.reset();
-        assert_eq!(counter.bool_count.counter, 0);
-        assert_eq!(counter.int_count.counter, 0);
-        assert_eq!(counter.real_count.counter, 0);
-        assert_eq!(counter.str_count.counter, 0);
     }
 
     #[test]
@@ -211,10 +177,6 @@ mod test {
 
         table.reset();
         assert_eq!(table.table.len(), 0);
-        assert_eq!(table.counter.bool_count.counter, 0);
-        assert_eq!(table.counter.int_count.counter, 0);
-        assert_eq!(table.counter.real_count.counter, 0);
-        assert_eq!(table.counter.str_count.counter, 0);
     }
 
     fn name_list(base: &str, count: usize) -> Vec<String> {

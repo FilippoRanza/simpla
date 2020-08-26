@@ -3,6 +3,7 @@ mod c_generator;
 mod code_generator;
 mod function_index;
 mod opcode;
+mod simple_counter;
 mod translate;
 mod var_cache;
 
