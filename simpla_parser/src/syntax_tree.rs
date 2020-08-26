@@ -1,4 +1,3 @@
-
 use std::cell::RefCell;
 
 #[derive(PartialEq, Debug)]
@@ -225,7 +224,7 @@ impl FuncCall {
 pub struct Expr {
     pub loc: Location,
     pub expr: ExprTree,
-    pub kind: RefCell<Option<Kind>>
+    pub kind: RefCell<Option<Kind>>,
 }
 
 impl Expr {
@@ -233,7 +232,7 @@ impl Expr {
         Self {
             expr,
             loc: Location::new(begin, end),
-            kind: RefCell::new(None)
+            kind: RefCell::new(None),
         }
     }
 }
