@@ -63,9 +63,9 @@ impl<'a> ByteCodeGenerator<'a> {
         match &expr.expr {
             syntax_tree::ExprTree::Node(lhs, op, rhs) => {
                 self.convert_expression(lhs);
+                self.convert_expression(rhs);          
                 self.buff
                     .push(operator_by_kind(op, lhs.kind.borrow().as_ref().unwrap()));
-                self.convert_expression(rhs);
             }
             syntax_tree::ExprTree::Factor(fact) => self.convert_factor(fact),
         }
@@ -291,7 +291,7 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     }
 
     fn gen_block(&mut self, block: &'a syntax_tree::StatList, block_type: BlockType) {
-        self.label_counter.reset();
+        
         for stat in block {
             self.convert_statement(stat)
         }
