@@ -285,6 +285,7 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     }
 
     fn gen_block(&mut self, block: &'a syntax_tree::StatList, block_type: BlockType) {
+        self.label_counter.reset();
         for stat in block {
             self.convert_statement(stat)
         }
