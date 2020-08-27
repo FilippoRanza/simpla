@@ -93,7 +93,7 @@ impl<'a> NameTable<'a> {
     }
 }
 
-struct KindCounter {
+pub struct KindCounter {
     int_count: SimpleCounter,
     real_count: SimpleCounter,
     str_count: SimpleCounter,
@@ -101,7 +101,7 @@ struct KindCounter {
 }
 
 impl KindCounter {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             int_count: SimpleCounter::new(),
             real_count: SimpleCounter::new(),
@@ -110,7 +110,7 @@ impl KindCounter {
         }
     }
 
-    fn get_index(&mut self, k: &Kind) -> AddrSize {
+    pub fn get_index(&mut self, k: &Kind) -> AddrSize {
         match k {
             Kind::Bool => self.bool_count.count_one(),
             Kind::Int => self.int_count.count_one(),
@@ -120,7 +120,7 @@ impl KindCounter {
         }
     }
 
-    fn reset(&mut self) {
+    pub fn reset(&mut self) {
         self.bool_count.reset();
         self.int_count.reset();
         self.real_count.reset();

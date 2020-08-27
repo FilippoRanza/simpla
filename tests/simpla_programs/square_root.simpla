@@ -6,7 +6,7 @@ number, result: real;
 func abs(x: real) : real
 body
     return if x < 0.0 then 
-           -x
+           0.0 - x
         else 
             x
         end;

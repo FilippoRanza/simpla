@@ -2,7 +2,7 @@ use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
 use super::simple_counter::{AddrSize, SimpleCounter};
-use super::var_cache::{VarCache, VariableType};
+use super::var_cache::{VarCache, VariableType, KindCounter};
 
 use simpla_parser::syntax_tree;
 
@@ -14,6 +14,7 @@ pub struct ByteCodeGenerator<'a> {
     var_cache: VarCache<'a>,
     function_index: FunctionIndex<'a>,
     label_counter: SimpleCounter,
+    param_counter: KindCounter,
     loop_exit_label: Vec<AddrSize>,
 }
 
@@ -25,6 +26,7 @@ impl<'a> ByteCodeGenerator<'a> {
             function_index,
             label_counter: SimpleCounter::new(),
             loop_exit_label: Vec::new(),
+            param_counter: KindCounter::new()
         }
     }
     fn insert_multi_byte_command(&mut self, cmd: u8, data: &[u8]) {
@@ -272,18 +274,27 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn convert_func_call(&mut self, func_call: &'a syntax_tree::FuncCall) {
         self.buff.push(opcode::PARAM);
-        for (index, expr) in func_call.args.iter().enumerate() {
-            self.convert_expression(expr);
-            let store = store_param_by_kind(expr.kind.borrow().as_ref().unwrap());
-            self.buff.push(store);
-            let param_id = (index as AddrSize) + LOCAL_MASK;
-            self.insert_bytes(&param_id.to_be_bytes());
+        for expr in &func_call.args {
+            self.convert_parameter(expr);
         }
+        self.param_counter.reset();
+
         self.insert_address_command(
             opcode::CALL,
             self.function_index.get_function_index(&func_call.id),
         );
     }
+
+    fn convert_parameter(&mut self, expr: &'a syntax_tree::Expr) {
+        self.convert_expression(expr);
+        let expr_kind = expr.kind.borrow();
+        let kind = expr_kind.as_ref().unwrap();
+        let store = store_param_by_kind(&kind);
+        self.buff.push(store);
+        let param_id = self.param_counter.get_index(&kind) + LOCAL_MASK;
+        self.insert_bytes(&param_id.to_be_bytes());
+    }
+
 }
 
 impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
