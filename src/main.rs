@@ -87,7 +87,7 @@ fn run_program(action: Action) -> Result<(), String> {
             let _ = compile_to_ast(&source_file)?;
         }
         Action::Compile(arg) => compile(arg, generator::translate_to_c)?,
-        Action::Translate(arg) => compile(arg, generator::translate_to_byte_code)?
+        Action::Translate(arg) => compile(arg, generator::translate_to_byte_code)?,
     }
 
     Ok(())
