@@ -1,5 +1,7 @@
+pub type AddrSize = u16;
+
 pub struct SimpleCounter {
-    counter: u16,
+    counter: AddrSize,
 }
 
 impl SimpleCounter {
@@ -7,7 +9,7 @@ impl SimpleCounter {
         Self { counter: 0 }
     }
 
-    pub fn count_one(&mut self) -> u16 {
+    pub fn count_one(&mut self) -> AddrSize {
         let output = self.counter;
         self.counter += 1;
         output

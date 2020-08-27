@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::simple_counter::SimpleCounter;
+use super::simple_counter::{AddrSize, SimpleCounter};
 use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList};
 
 pub struct VarCache<'a> {
@@ -37,7 +37,7 @@ impl<'a> VarCache<'a> {
         self.local_vars.reset();
     }
 
-    pub fn lookup(&self, name: &str) -> &(Kind, u16) {
+    pub fn lookup(&self, name: &str) -> &(Kind, AddrSize) {
         if let Some(kind) = self.local_vars.get(name) {
             kind
         } else {
@@ -59,7 +59,7 @@ fn cache_var_decl<'a>(var_decl: &'a VarDecl, map: &mut NameTable<'a>) {
 }
 
 struct NameTable<'a> {
-    table: HashMap<&'a str, (Kind, u16)>,
+    table: HashMap<&'a str, (Kind, AddrSize)>,
     counter: KindCounter,
 }
 
@@ -76,7 +76,7 @@ impl<'a> NameTable<'a> {
         self.table.insert(name, (k.clone(), index));
     }
 
-    fn get(&self, name: &str) -> Option<&(Kind, u16)> {
+    fn get(&self, name: &str) -> Option<&(Kind, AddrSize)> {
         self.table.get(name)
     }
 
@@ -103,7 +103,7 @@ impl KindCounter {
         }
     }
 
-    fn get_index(&mut self, k: &Kind) -> u16 {
+    fn get_index(&mut self, k: &Kind) -> AddrSize {
         match k {
             Kind::Bool => self.bool_count.count_one(),
             Kind::Int => self.int_count.count_one(),
@@ -128,7 +128,7 @@ mod test {
     use lazy_static::lazy_static;
 
     lazy_static! {
-        static ref KIND_VECTOR: &'static [(Kind, u16)] = &[
+        static ref KIND_VECTOR: &'static [(Kind, AddrSize)] = &[
             (Kind::Str, 0),
             (Kind::Str, 1),
             (Kind::Int, 0),

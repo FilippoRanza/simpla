@@ -1,12 +1,10 @@
 use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
-use super::simple_counter::SimpleCounter;
+use super::simple_counter::{AddrSize, SimpleCounter};
 use super::var_cache::VarCache;
 
 use simpla_parser::syntax_tree;
-
-type AddrSize = u16;
 
 pub struct ByteCodeGenerator<'a> {
     buff: Vec<u8>,
@@ -385,7 +383,7 @@ fn defaut_value(kind: &syntax_tree::Kind) -> Vec<u8> {
         syntax_tree::Kind::Bool => Vec::from([0]),
         syntax_tree::Kind::Int => Vec::from((0 as i32).to_be_bytes()),
         syntax_tree::Kind::Real => Vec::from((0.0 as f64).to_be_bytes()),
-        syntax_tree::Kind::Str => Vec::from((0 as u16).to_be_bytes()),
+        syntax_tree::Kind::Str => Vec::from((0 as AddrSize).to_be_bytes()),
         syntax_tree::Kind::Void => unreachable!(),
     }
 }
