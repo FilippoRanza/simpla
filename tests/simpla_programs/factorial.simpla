@@ -17,7 +17,7 @@ func print_factorials(limit: integer): void
 body
     for i = 0 to limit do
         f = factorial(i);
-        writeln(i, "! = ", f);
+        write(i, "! = ", f, " ");
     end;
 end;
 

@@ -113,7 +113,8 @@ impl<'a> CSourceGenerator<'a> {
         let mut read_stats = Vec::new();
         for id in read {
             let c_id = convert_id(ID_HEADER, id);
-            let (expr_kind, _) = self.var_cache.lookup(id);
+            let (var_info, _) = self.var_cache.lookup(id);
+            let (expr_kind, _) = var_info;
             let stat = convert_read_stat(&c_id, expr_kind);
             read_stats.push(stat);
         }

@@ -2,9 +2,12 @@ use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
 use super::simple_counter::{AddrSize, SimpleCounter};
-use super::var_cache::VarCache;
+use super::var_cache::{VarCache, VariableType};
 
 use simpla_parser::syntax_tree;
+
+const ADDR_SIZE_ZERO: AddrSize = 0;
+const LOCAL_MASK: AddrSize = 1 << (ADDR_SIZE_ZERO.count_zeros() - 1);
 
 pub struct ByteCodeGenerator<'a> {
     buff: Vec<u8>,
@@ -49,9 +52,12 @@ impl<'a> ByteCodeGenerator<'a> {
     where
         F: Fn(&syntax_tree::Kind) -> u8,
     {
-        let (kind, id) = self.var_cache.lookup(name);
-        let id = *id;
-        let cmd = convert(kind);
+        let ((kind, id), ref scope) = self.var_cache.lookup(name);
+        let id = match scope {
+            VariableType::Global => *id,
+            VariableType::Local => *id + LOCAL_MASK
+        };
+        let cmd = convert(kind); 
         self.insert_multi_byte_command(cmd, &id.to_be_bytes());
     }
 
@@ -204,8 +210,8 @@ impl<'a> ByteCodeGenerator<'a> {
         self.loop_exit_label.push(end_lbl);
         self.eval_and_assign(&for_stat.id, &for_stat.begin_expr);
         self.insert_label(for_lbl);
-        self.convert_expression(&for_stat.end_expr);
         self.load_variable(&for_stat.id);
+        self.convert_expression(&for_stat.end_expr);
         self.buff.push(opcode::LEQI);
         self.insert_false_cond_jump(end_lbl);
         self.gen_block(&for_stat.body, BlockType::General);
@@ -232,7 +238,7 @@ impl<'a> ByteCodeGenerator<'a> {
     }
 
     fn read_value(&mut self, id: &str) {
-        let (kind, _) = self.var_cache.lookup(id);
+        let ((kind, _), _) = self.var_cache.lookup(id);
         self.buff.push(read_by_kind(kind));
         self.assign_value(id);
     }
@@ -266,10 +272,12 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn convert_func_call(&mut self, func_call: &'a syntax_tree::FuncCall) {
         self.buff.push(opcode::PARAM);
-        for expr in &func_call.args {
+        for (index, expr) in func_call.args.iter().enumerate() {
             self.convert_expression(expr);
             let store = store_param_by_kind(expr.kind.borrow().as_ref().unwrap());
             self.buff.push(store);
+            let param_id = (index as AddrSize) + LOCAL_MASK;
+            self.insert_bytes(&param_id.to_be_bytes());
         }
         self.insert_address_command(
             opcode::CALL,
@@ -309,7 +317,7 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
 
         for var_decl in var_decl_list {
             for var in &var_decl.id_list {
-                let (_, id) = self.var_cache.lookup(var);
+                let ((_, id), _) = self.var_cache.lookup(var);
                 let id = *id; // so linter is happy
                 let (first, second) = init_command(&var_decl.kind);
                 let data = defaut_value(&var_decl.kind);

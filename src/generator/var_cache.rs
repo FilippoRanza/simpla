@@ -3,6 +3,11 @@ use std::collections::HashMap;
 use super::simple_counter::{AddrSize, SimpleCounter};
 use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList};
 
+pub enum VariableType {
+    Global,
+    Local
+}
+
 pub struct VarCache<'a> {
     global_vars: NameTable<'a>,
     local_vars: NameTable<'a>,
@@ -37,11 +42,11 @@ impl<'a> VarCache<'a> {
         self.local_vars.reset();
     }
 
-    pub fn lookup(&self, name: &str) -> &(Kind, AddrSize) {
-        if let Some(kind) = self.local_vars.get(name) {
-            kind
+    pub fn lookup(&self, name: &str) -> (&VarInfo, VariableType ){
+        if let Some(output) = self.local_vars.get(name) {
+            (output, VariableType::Local)
         } else {
-            self.global_vars.get(name).unwrap()
+            (self.global_vars.get(name).unwrap(), VariableType::Global)
         }
     }
 }
@@ -58,8 +63,10 @@ fn cache_var_decl<'a>(var_decl: &'a VarDecl, map: &mut NameTable<'a>) {
     }
 }
 
+type VarInfo = (Kind, AddrSize);
+
 struct NameTable<'a> {
-    table: HashMap<&'a str, (Kind, AddrSize)>,
+    table: HashMap<&'a str, VarInfo>,
     counter: KindCounter,
 }
 
