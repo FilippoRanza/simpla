@@ -1,0 +1,42 @@
+number: integer;
+
+func factorial(n: integer): integer
+    fact: integer;
+body
+    if n == 0 then
+        fact = 1;
+    else
+        fact = n * factorial(n - 1);
+    end;
+    return fact;
+end;
+
+
+func print_factorials(limit: integer): void
+    i, f: integer;
+body
+    for i = 0 to limit do
+        f = factorial(i);
+        writeln(i, "! = ", f);
+    end;
+end;
+
+body
+    writeln("This program calculates factorial up to a given number");
+    write("Please insert a number ");
+    read(number);
+    if number < 0 then
+        writeln("Factorial is defined only for positive integers");
+    else
+        print_factorials(number);
+    end;
+    writeln("Goodbye");
+end.
+
+
+
+
+
+
+
+
