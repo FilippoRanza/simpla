@@ -124,9 +124,15 @@ impl<'a> ByteCodeGenerator<'a> {
                 self.insert_multi_byte_command(opcode::LDBC, &[if *b { 255 } else { 0 }])
             }
             syntax_tree::Const::StrConst(s) => {
-                self.insert_multi_byte_command(opcode::LDSC, &s.as_bytes())
+                self.insert_string(s)
             }
         }
+    }
+
+    fn insert_string(&mut self, s: &str) {
+        let len = s.len() as AddrSize;
+        self.insert_multi_byte_command(opcode::LDSC, &len.to_be_bytes());
+        self.insert_bytes(s.as_bytes());
     }
 
     fn assign_value(&mut self, name: &str) {
