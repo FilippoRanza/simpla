@@ -281,6 +281,9 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
         self.gen_variables(&func.vars, Scope::Local);
         self.gen_block(&func.body, BlockType::General);
         self.var_cache.clear_local_vars();
+        if *self.buff.last().unwrap() != opcode::RET {
+            self.buff.push(opcode::RET);
+        }
     }
 
     fn gen_block(&mut self, block: &'a syntax_tree::StatList, block_type: BlockType) {
