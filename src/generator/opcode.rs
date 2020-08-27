@@ -43,7 +43,7 @@ pub const STRR: u8 = 41; // 41 % 4 = 1
 pub const STRB: u8 = 42; // 42 % 4 = 2
 pub const STRS: u8 = 43; // 43 % 4 = 3
 pub const JUMP: u8 = 44;
-pub const JEQ: u8 = 45;
+//pub const JEQ: u8 = 45;
 pub const JNE: u8 = 46;
 pub const LBL: u8 = 47;
 pub const CALL: u8 = 48;
