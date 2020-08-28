@@ -1,0 +1,13 @@
+
+func missing_return() : integer
+    a, b: integer;
+body
+    write("TEST");
+    read(a);
+    read(b);
+end;
+
+
+body
+    missing_return();
+end.

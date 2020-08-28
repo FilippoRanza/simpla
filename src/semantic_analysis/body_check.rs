@@ -1,3 +1,4 @@
+use super::analyze_return_stat;
 use super::name_table::{LocalVariableTable, VariableTable};
 use super::semantic_error::SemanticError;
 use super::stat_check;
@@ -13,6 +14,13 @@ pub fn check_function_declaration<'a>(
         table,
         stat_check::Contex::Function(func_decl),
     )?;
+    if func_decl.kind != syntax_tree::Kind::Void {
+        analyze_return_stat::check_full_return_cover(
+            &func_decl.body,
+            &func_decl.loc,
+            &func_decl.kind,
+        )?;
+    }
     Ok(())
 }
 

@@ -1,5 +1,7 @@
 use simpla_parser::syntax_tree;
 
+use std::convert;
+
 #[derive(PartialEq, Debug)]
 pub enum SemanticError<'a> {
     NameRidefinition(NameRidefinition),
@@ -15,6 +17,7 @@ pub enum SemanticError<'a> {
     ArgumentCountError(ArgumentCountError<'a>),
     MismatchedArgumentType(MismatchedArgumentType<'a>),
     MismatchedAssignment(MismatchedAssignment<'a>),
+    MissingReturn(MissingReturn<'a>),
     BreakOutsideLoop,
     ForLoopError(ForLoopError<'a>),
     ReturnError(ReturnError<'a>),
@@ -302,5 +305,32 @@ impl<'a> MismatchedArgumentType<'a> {
             index,
             loc,
         }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MissingReturn<'a> {
+    pub func_loc: &'a syntax_tree::Location,
+    pub stat_loc: &'a syntax_tree::Location,
+    pub kind: &'a syntax_tree::Kind,
+}
+
+impl<'a> MissingReturn<'a> {
+    pub fn new(
+        func_loc: &'a syntax_tree::Location,
+        stat_loc: &'a syntax_tree::Location,
+        kind: &'a syntax_tree::Kind,
+    ) -> Self {
+        Self {
+            func_loc,
+            stat_loc,
+            kind,
+        }
+    }
+}
+
+impl<'a> convert::From<MissingReturn<'a>> for SemanticError<'a> {
+    fn from(err: MissingReturn<'a>) -> SemanticError<'a> {
+        SemanticError::MissingReturn(err)
     }
 }

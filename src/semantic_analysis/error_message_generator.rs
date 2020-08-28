@@ -37,6 +37,7 @@ impl<'a> semantic_error::SemanticError<'a> {
             Self::BreakOutsideLoop => format!("break error: break outside loop"),
             Self::ForLoopError(err) => format!("for loop error: {}", err.format_error(code)),
             Self::ReturnError(err) => format!("return error: {}", err.format_error(code)),
+            Self::MissingReturn(err) => err.format_error(code),
         };
         format!("{}", msg)
     }
@@ -220,6 +221,17 @@ impl<'a> semantic_error::MismatchedArgumentType<'a> {
             (self.index + 1),
             format_wrong_code(code, &self.func.loc),
             format_wrong_code(code, &self.loc)
+        )
+    }
+}
+
+impl<'a> semantic_error::MissingReturn<'a> {
+    fn format_error(&self, code: &str) -> String {
+        format!(
+            "Missing return statement in non void [actual type: {}] function:\nFound:\n{}\nIn Function:\n{}",
+            kind_to_string(&self.kind),
+            format_wrong_code(code, &self.stat_loc),
+            format_wrong_code(code, &self.func_loc)
         )
     }
 }

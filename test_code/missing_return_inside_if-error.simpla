@@ -1,0 +1,24 @@
+func error_conditional_return(): integer
+    a, b, c: integer;
+body
+
+    read(a);
+    read(b);
+    if a > b then
+        c = a * b;
+        return c;
+    else
+        c = a + b;
+        if c / 2 > a then
+            return a;
+        else
+            b = 4;
+        end;
+    end;
+end;
+
+
+body
+    error_conditional_return();
+end.
+

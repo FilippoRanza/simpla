@@ -20,7 +20,7 @@ pub fn translate_to_byte_code<'a>(prog: &'a Program) -> Vec<u8> {
 
 enum TranslationMode {
     MainBefore,
-    MainAfter
+    MainAfter,
 }
 
 fn translate<'a>(prog: &'a Program, tranlator: &mut dyn CodeGenerator<'a>, mode: TranslationMode) {
@@ -35,9 +35,8 @@ fn translate<'a>(prog: &'a Program, tranlator: &mut dyn CodeGenerator<'a>, mode:
         tranlator.gen_function(func);
     }
 
-    match mode { 
+    match mode {
         TranslationMode::MainAfter => tranlator.gen_block(&prog.body, BlockType::Main),
         _ => {}
     }
-
 }

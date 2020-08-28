@@ -2,7 +2,7 @@ use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
 use super::simple_counter::{AddrSize, SimpleCounter};
-use super::var_cache::{VarCache, VariableType, KindCounter};
+use super::var_cache::{KindCounter, VarCache, VariableType};
 
 use simpla_parser::syntax_tree;
 
@@ -26,7 +26,7 @@ impl<'a> ByteCodeGenerator<'a> {
             function_index,
             label_counter: SimpleCounter::new(),
             loop_exit_label: Vec::new(),
-            param_counter: KindCounter::new()
+            param_counter: KindCounter::new(),
         }
     }
     fn insert_multi_byte_command(&mut self, cmd: u8, data: &[u8]) {
@@ -57,9 +57,9 @@ impl<'a> ByteCodeGenerator<'a> {
         let ((kind, id), ref scope) = self.var_cache.lookup(name);
         let id = match scope {
             VariableType::Global => *id,
-            VariableType::Local => *id + LOCAL_MASK
+            VariableType::Local => *id + LOCAL_MASK,
         };
-        let cmd = convert(kind); 
+        let cmd = convert(kind);
         self.insert_multi_byte_command(cmd, &id.to_be_bytes());
     }
 
@@ -71,7 +71,7 @@ impl<'a> ByteCodeGenerator<'a> {
         match &expr.expr {
             syntax_tree::ExprTree::Node(lhs, op, rhs) => {
                 self.convert_expression(lhs);
-                self.convert_expression(rhs);          
+                self.convert_expression(rhs);
                 self.buff
                     .push(operator_by_kind(op, lhs.kind.borrow().as_ref().unwrap()));
             }
@@ -131,9 +131,7 @@ impl<'a> ByteCodeGenerator<'a> {
             syntax_tree::Const::BoolConst(b) => {
                 self.insert_multi_byte_command(opcode::LDBC, &[if *b { 255 } else { 0 }])
             }
-            syntax_tree::Const::StrConst(s) => {
-                self.insert_string(s)
-            }
+            syntax_tree::Const::StrConst(s) => self.insert_string(s),
         }
     }
 
@@ -295,7 +293,6 @@ impl<'a> ByteCodeGenerator<'a> {
         let param_id = self.param_counter.get_index(&kind) + LOCAL_MASK;
         self.insert_bytes(&param_id.to_be_bytes());
     }
-
 }
 
 impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
@@ -311,7 +308,6 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     }
 
     fn gen_block(&mut self, block: &'a syntax_tree::StatList, block_type: BlockType) {
-        
         for stat in block {
             self.convert_statement(stat)
         }
@@ -355,11 +351,10 @@ impl WriteMode {
     fn flush_action(&self) -> u8 {
         match self {
             Self::NewLine => opcode::FLN,
-            Self::SameLine => opcode::FLU
+            Self::SameLine => opcode::FLU,
         }
     }
 }
-
 
 fn write_by_kind(k: &syntax_tree::Kind) -> u8 {
     match k {

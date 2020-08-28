@@ -1,0 +1,26 @@
+
+
+func conditional_return(): integer
+    a, b, c: integer;
+body
+
+    read(a);
+    read(b);
+    if a > b then
+        c = a * b;
+        return c;
+    else
+        c = a + b;
+        if c / 2 > a then
+            return a;
+        else
+            return b;
+        end;
+    end;
+end;
+
+
+body
+    conditional_return();
+end.
+

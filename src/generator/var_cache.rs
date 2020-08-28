@@ -5,7 +5,7 @@ use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList};
 
 pub enum VariableType {
     Global,
-    Local
+    Local,
 }
 
 pub struct VarCache<'a> {
@@ -42,7 +42,7 @@ impl<'a> VarCache<'a> {
         self.local_vars.reset();
     }
 
-    pub fn lookup(&self, name: &str) -> (&VarInfo, VariableType ){
+    pub fn lookup(&self, name: &str) -> (&VarInfo, VariableType) {
         if let Some(output) = self.local_vars.get(name) {
             (output, VariableType::Local)
         } else {
