@@ -252,14 +252,15 @@ impl<'a> ByteCodeGenerator<'a> {
         };
 
         for expr in expr_list {
-            self.write_value(expr, &mode);
+            self.write_value(expr);
         }
+        self.buff.push(mode.flush_action())
     }
 
-    fn write_value(&mut self, expr: &'a syntax_tree::Expr, mode: &WriteMode) {
+    fn write_value(&mut self, expr: &'a syntax_tree::Expr) {
         self.convert_expression(expr);
         self.buff
-            .push(mode.write_by_kind(expr.kind.borrow().as_ref().unwrap()));
+            .push(write_by_kind(expr.kind.borrow().as_ref().unwrap()));
     }
 
     fn convert_break_stat(&mut self) {
@@ -351,18 +352,22 @@ enum WriteMode {
 }
 
 impl WriteMode {
-    fn write_by_kind(&self, k: &syntax_tree::Kind) -> u8 {
-        match (self, k) {
-            (Self::NewLine, syntax_tree::Kind::Bool) => opcode::WRLB,
-            (Self::NewLine, syntax_tree::Kind::Int) => opcode::WRLI,
-            (Self::NewLine, syntax_tree::Kind::Real) => opcode::WRLR,
-            (Self::NewLine, syntax_tree::Kind::Str) => opcode::WRLS,
-            (Self::SameLine, syntax_tree::Kind::Bool) => opcode::WRB,
-            (Self::SameLine, syntax_tree::Kind::Int) => opcode::WRI,
-            (Self::SameLine, syntax_tree::Kind::Real) => opcode::WRR,
-            (Self::SameLine, syntax_tree::Kind::Str) => opcode::WRS,
-            (_, syntax_tree::Kind::Void) => unreachable!(),
+    fn flush_action(&self) -> u8 {
+        match self {
+            Self::NewLine => opcode::FLN,
+            Self::SameLine => opcode::FLU
         }
+    }
+}
+
+
+fn write_by_kind(k: &syntax_tree::Kind) -> u8 {
+    match k {
+        syntax_tree::Kind::Bool => opcode::WRB,
+        syntax_tree::Kind::Int => opcode::WRI,
+        syntax_tree::Kind::Real => opcode::WRR,
+        syntax_tree::Kind::Str => opcode::WRS,
+        syntax_tree::Kind::Void => unreachable!(),
     }
 }
 

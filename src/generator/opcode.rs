@@ -30,10 +30,8 @@ pub const WRI: u8 = 28; // 28 % 4 = 0
 pub const WRR: u8 = 29; // 29 % 4 = 1
 pub const WRB: u8 = 30; // 30 % 4 = 2
 pub const WRS: u8 = 31; // 31 % 4 = 3
-pub const WRLI: u8 = 32; // 32 % 4 = 0
-pub const WRLR: u8 = 33; // 33 % 4 = 1
-pub const WRLB: u8 = 34; // 34 % 4 = 2
-pub const WRLS: u8 = 35; // 35 % 4 = 3
+pub const FLU: u8 = 32; // 32 % 4 = 0
+pub const FLN: u8 = 33; // 33 % 4 = 1
 pub const LDI: u8 = 36; // 36 % 4 = 0
 pub const LDR: u8 = 37; // 37 % 4 = 1
 pub const LDB: u8 = 38; // 38 % 4 = 2
