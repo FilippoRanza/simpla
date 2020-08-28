@@ -97,5 +97,4 @@ fn main() {
         Ok(()) => {}
         Err(msg) => eprintln!("{}", msg),
     }
-
 }

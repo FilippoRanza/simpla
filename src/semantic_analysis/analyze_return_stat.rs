@@ -35,9 +35,9 @@ fn check_return<'a>(
 #[cfg(test)]
 mod test {
 
-    use simpla_parser;
     use super::*;
-    
+    use simpla_parser;
+
     use std::fs::File;
     use std::io::Read;
     use std::path::PathBuf;
@@ -46,7 +46,7 @@ mod test {
 
     #[test]
     fn test_missing_return_inside_if() {
-         run_error_test("missing_return_inside_if-error.simpla", 251, 256);
+        run_error_test("missing_return_inside_if-error.simpla", 251, 256);
     }
 
     #[test]
@@ -65,8 +65,6 @@ mod test {
         assert_eq!(err.stat_loc.begin, stat_begin);
         assert_eq!(err.stat_loc.end, stat_end);
     }
-    
-
 
     #[test]
     fn test_standard_return() {
@@ -76,7 +74,6 @@ mod test {
         assert!(stat.is_ok(), "{:?}", stat);
     }
 
-
     #[test]
     fn test_return_into_if_stat() {
         let prog = compile_file("return_inside_if-correct.simpla");
@@ -85,7 +82,6 @@ mod test {
         assert!(stat.is_ok(), "{:?}", stat);
     }
 
-    
     fn compile_file(name: &str) -> syntax_tree::Program {
         let file = PathBuf::from(BASE_DIR).join(name);
         let mut file = File::open(file).unwrap();
@@ -95,7 +91,4 @@ mod test {
         let prog = parser.parse(&code).unwrap();
         prog
     }
-
-
 }
-
