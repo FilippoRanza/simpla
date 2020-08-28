@@ -13,8 +13,6 @@ enum Action {
     Check { source_file: PathBuf },
     #[structopt(about = "Compile a Simpla program to simplac bytecode")]
     Translate(Arguments),
-    #[structopt(about = "Compile a Simpla program to C source file")]
-    Compile(Arguments),
 }
 
 #[derive(StructOpt, Debug)]
@@ -86,7 +84,6 @@ fn run_program(action: Action) -> Result<(), String> {
         Action::Check { source_file } => {
             let _ = compile_to_ast(&source_file)?;
         }
-        Action::Compile(arg) => compile(arg, generator::translate_to_c)?,
         Action::Translate(arg) => compile(arg, generator::translate_to_byte_code)?,
     }
 
@@ -101,17 +98,4 @@ fn main() {
         Err(msg) => eprintln!("{}", msg),
     }
 
-    /*
-    let prog = load_file(&args.source_file).unwrap();
-    match compile(&prog) {
-        Ok(byte_code) => {
-            let res = save_to_file(args, byte_code);
-            match res {
-                Ok(()) => {}
-                Err(io_err) => eprintln!("{}", io_err),
-            };
-        }
-        Err(err_msg) => eprintln!("{}", err_msg),
-    }
-    */
 }
