@@ -209,9 +209,11 @@ impl<'a> ByteCodeGenerator<'a> {
         let end_lbl = self.label_counter.count_one();
         self.loop_exit_label.push(end_lbl);
         self.eval_and_assign(&for_stat.id, &for_stat.begin_expr);
+        self.convert_expression(&for_stat.end_expr);
+        self.buff.push(opcode::BFOR);
         self.insert_label(for_lbl);
         self.load_variable(&for_stat.id);
-        self.convert_expression(&for_stat.end_expr);
+        self.buff.push(opcode::CFOR);
         self.buff.push(opcode::LEQI);
         self.insert_false_cond_jump(end_lbl);
         self.gen_block(&for_stat.body, BlockType::General);
@@ -221,7 +223,9 @@ impl<'a> ByteCodeGenerator<'a> {
         self.assign_value(&for_stat.id);
         self.insert_uncond_jump(for_lbl);
         self.insert_label(end_lbl);
+        self.buff.push(opcode::EFOR);
         self.loop_exit_label.pop();
+
     }
 
     fn convert_return_stat(&mut self, return_stat: &'a Option<syntax_tree::Expr>) {
