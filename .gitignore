@@ -2,3 +2,4 @@
 Cargo.lock
 *.simplac
 a.out
+/simpla_tests
