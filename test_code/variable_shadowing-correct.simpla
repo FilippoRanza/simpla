@@ -1,0 +1,28 @@
+a, b: real;
+
+func fibonacci(n: integer) : integer
+    a, b, i, tmp: integer;
+body
+    a = 0;
+    b = 1;
+    for i = 0 to n do
+        tmp = a + b;
+        a = b;
+        b = tmp;
+    end;
+    return a;
+end;
+
+body
+    a = 5.6;
+    b = 12.5;
+    writeln(a);
+    writeln(b);
+
+    writeln(fibonacci(6));
+
+end.
+
+
+
+

@@ -43,3 +43,43 @@ fn convert_error<'a>(res: Result<(), SemanticError<'a>>, code: &'a str) -> Resul
         Err(err) => Err(err.format_error(code)),
     }
 }
+
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use simpla_parser::ProgramParser;
+    use std::path::{PathBuf, Path};
+    use std::fs::File;
+    use std::io::Read;
+
+
+    #[test]
+    fn test_variable_shadowing() {
+        let var_shadow_code = PathBuf::from("test_code").join("variable_shadowing-correct.simpla");
+        let code = load_file(&var_shadow_code);
+        let parser = ProgramParser::new();
+
+        let prog = parser.parse(&code).unwrap();
+
+        let result = semantic_check(&prog, &code);
+        if let Err(err) = result {
+            assert!(false, "{}", err)
+        }
+
+
+    }
+
+
+
+    fn load_file(file: &Path) -> String {
+        let mut buff = String::new();
+        let mut file = File::open(file).unwrap();
+        file.read_to_string(&mut buff).unwrap();
+        buff
+    }
+
+}
+
+

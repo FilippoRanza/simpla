@@ -144,8 +144,6 @@ impl<'a> VariableTable<'a> for LocalVariableTable<'a> {
         kind: &'a syntax_tree::Kind,
         loc: &'a syntax_tree::Location,
     ) -> Result<(), SemanticError<'a>> {
-        self.global_table
-            .check_collision(name, loc, Entry::Variable)?;
         self.function_table
             .check_collision(name, loc, Entry::Variable)?;
         self.local_table
@@ -318,13 +316,6 @@ mod test {
             .insert_variable(local_variable, &syntax_tree::Kind::Real, &loc_d)
             .unwrap();
 
-        let err = table.insert_variable(global_variable, &syntax_tree::Kind::Str, &loc_e);
-        check_status(
-            err,
-            global_variable,
-            Ridefinition::Variable(loc_a.clone()),
-            Ridefinition::Variable(loc_e.clone()),
-        );
 
         let err = table.insert_variable(function_name, &syntax_tree::Kind::Bool, &loc_f);
         check_status(
