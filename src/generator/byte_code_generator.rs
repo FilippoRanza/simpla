@@ -2,7 +2,7 @@ use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
 use super::simple_counter::{AddrSize, SimpleCounter};
-use super::var_cache::{KindCounter, VarCache, VariableType};
+use super::var_cache::{KindCounter, VariableType, VarLookup};
 
 use simpla_parser::syntax_tree;
 
@@ -11,18 +11,18 @@ const LOCAL_MASK: AddrSize = 1 << (ADDR_SIZE_ZERO.count_zeros() - 1);
 
 pub struct ByteCodeGenerator<'a> {
     buff: Vec<u8>,
-    var_cache: VarCache<'a>,
     function_index: FunctionIndex<'a>,
     label_counter: SimpleCounter,
     param_counter: KindCounter,
     loop_exit_label: Vec<AddrSize>,
+    local_cache: VarLookup<'a> 
 }
 
 impl<'a> ByteCodeGenerator<'a> {
-    pub fn new(function_index: FunctionIndex<'a>) -> Self {
+    pub fn new(function_index: FunctionIndex<'a>, local_cache: VarLookup<'a>) -> Self {
         Self {
             buff: Vec::new(),
-            var_cache: VarCache::new(),
+            local_cache,
             function_index,
             label_counter: SimpleCounter::new(),
             loop_exit_label: Vec::new(),
@@ -54,7 +54,7 @@ impl<'a> ByteCodeGenerator<'a> {
     where
         F: Fn(&syntax_tree::Kind) -> u8,
     {
-        let ((kind, id), ref scope) = self.var_cache.lookup(name);
+        let ((kind, id), ref scope) = self.local_cache.lookup(name);
         let id = match scope {
             VariableType::Global => *id,
             VariableType::Local => *id + LOCAL_MASK,
@@ -225,7 +225,6 @@ impl<'a> ByteCodeGenerator<'a> {
         self.insert_label(end_lbl);
         self.buff.push(opcode::EFOR);
         self.loop_exit_label.pop();
-
     }
 
     fn convert_return_stat(&mut self, return_stat: &'a Option<syntax_tree::Expr>) {
@@ -242,7 +241,7 @@ impl<'a> ByteCodeGenerator<'a> {
     }
 
     fn read_value(&mut self, id: &str) {
-        let ((kind, _), _) = self.var_cache.lookup(id);
+        let ((kind, _), _) = self.local_cache.lookup(id);
         self.buff.push(read_by_kind(kind));
         self.assign_value(id);
     }
@@ -297,15 +296,20 @@ impl<'a> ByteCodeGenerator<'a> {
         let param_id = self.param_counter.get_index(&kind) + LOCAL_MASK;
         self.insert_bytes(&param_id.to_be_bytes());
     }
+
+    pub fn switch_local_cache(&mut self, local: VarLookup<'a>) {
+        self.local_cache = local;
+    }
+
+
 }
 
 impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     fn gen_function(&mut self, func: &'a syntax_tree::FuncDecl) {
         self.buff.push(opcode::FUNC);
-        self.var_cache.cache_params(&func.params);
+
         self.gen_variables(&func.vars, Scope::Local);
         self.gen_block(&func.body, BlockType::General);
-        self.var_cache.clear_local_vars();
         if *self.buff.last().unwrap() != opcode::RET {
             self.buff.push(opcode::RET);
         }
@@ -322,15 +326,13 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     }
 
     fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
-        match scope {
-            Scope::Local => self.var_cache.cache_local_vars(var_decl_list),
-            Scope::Global => self.var_cache.cache_global_vars(var_decl_list),
-        };
-
         for var_decl in var_decl_list {
             for var in &var_decl.id_list {
-                let ((_, id), _) = self.var_cache.lookup(var);
-                let id = *id; // so linter is happy
+                let ((_, id), _) = self.local_cache.lookup(var);
+                let id = match scope {
+                    Scope::Global => *id,
+                    Scope::Local => {*id + LOCAL_MASK},
+                };
                 let (first, second) = init_command(&var_decl.kind);
                 let data = defaut_value(&var_decl.kind);
                 self.buff.push(first);
@@ -378,8 +380,8 @@ enum CastOp {
 impl CastOp {
     fn get_command(&self) -> u8 {
         match self {
-            Self::ToInt => opcode::CSTR,
-            Self::ToReal => opcode::CSTI,
+            Self::ToInt => opcode::CSTI,
+            Self::ToReal => opcode::CSTR,
         }
     }
 }

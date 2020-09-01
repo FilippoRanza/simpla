@@ -316,7 +316,6 @@ mod test {
             .insert_variable(local_variable, &syntax_tree::Kind::Real, &loc_d)
             .unwrap();
 
-
         let err = table.insert_variable(function_name, &syntax_tree::Kind::Bool, &loc_f);
         check_status(
             err,

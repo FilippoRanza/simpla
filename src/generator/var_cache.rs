@@ -1,53 +1,162 @@
 use std::collections::HashMap;
 
 use super::simple_counter::{AddrSize, SimpleCounter};
-use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList};
+use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList, Program, FuncDecl};
+
+pub fn build_global_var_cache<'a>(prog: &'a Program) -> GlobalVarCache<'a> {
+    let mut factory = GlobalVarCacheFactory::new();
+    factory.cache_global_vars(&prog.global_vars);
+
+    let mut factory = factory.switch_to_function_factory();
+    for func in &prog.functions {
+        build_local_var_cache(func, &mut factory);
+    }
+
+    factory.build_var_cache()
+}
+
+
+fn build_local_var_cache<'a>(func: &'a FuncDecl, factory: &mut FunctionVarCacheFactory<'a>) {
+    factory.insert_function(&func.id);
+    factory.cache_params(&func.id, &func.params);
+    factory.cache_local_vars(&func.id, &func.vars);
+}
+
+
+struct GlobalVarCacheFactory<'a> {
+    global_vars: NameTable<'a>,
+}
+
+impl<'a> GlobalVarCacheFactory<'a> {
+    fn new() -> Self {
+        Self {
+            global_vars: NameTable::new(),
+        }
+    }
+
+    fn cache_global_vars(&mut self, var_decl_list: &'a VarDeclList) {
+        cache_var_decl_list(var_decl_list, &mut self.global_vars);
+    }
+
+    fn switch_to_function_factory(self) -> FunctionVarCacheFactory<'a> {
+        FunctionVarCacheFactory::new(self.global_vars)
+    }
+}
+
+struct FunctionVarCacheFactory<'a> {
+    global_vars: NameTable<'a>,
+    function_vars: HashMap<&'a str, NameTable<'a>>,
+}
+
+impl<'a> FunctionVarCacheFactory<'a> {
+    fn new(global_vars: NameTable<'a>) -> Self {
+        Self {
+            global_vars,
+            function_vars: HashMap::new(),
+        }
+    }
+
+    fn insert_function(&mut self, name: &'a str) {
+        let new_table = NameTable::new();
+        self.function_vars.insert(name, new_table);
+    }
+
+    fn cache_local_vars(&mut self, name: &'a str, var_decl_list: &'a VarDeclList) {
+        if let Some(curr) = self.function_vars.get_mut(name) {
+            cache_var_decl_list(var_decl_list, curr);
+        } else {
+            panic!();
+        }
+    }
+
+    fn cache_params(&mut self, name: &'a str, param_decl_list: &'a ParamList) {
+        if let Some(curr) = self.function_vars.get_mut(name) {
+            cache_param_decl(param_decl_list, curr);
+        } else {
+            panic!();
+        }
+    }
+
+    fn build_var_cache(self) -> GlobalVarCache<'a> {
+        GlobalVarCache::new(self.global_vars, self.function_vars)
+    }
+}
+
+pub struct GlobalVarCache<'a> {
+    global_vars: VarTable<'a>,
+    function_vars: HashMap<&'a str, VarTable<'a>>,
+}
+
+impl<'a> GlobalVarCache<'a> {
+    fn new(global_vars: NameTable<'a>, function_vars: HashMap<&'a str, NameTable<'a>>) -> Self {
+        Self {
+            global_vars: global_vars.get_table(),
+            function_vars: function_vars
+                .into_iter()
+                .map(|(name, table)| (name, table.get_table()))
+                .collect(),
+        }
+    }
+
+    pub fn get_local_cache(&'a self, name: &str) -> VarLookup<'a> {
+        let local = self.function_vars.get(name).unwrap();
+        VarLookup::new_local(&self.global_vars, local)
+    }
+
+    pub fn get_global_cache(&'a self) -> VarLookup<'a> {
+        VarLookup::new_global(&self.global_vars)
+    }
+}
+
+pub struct VarLookup<'a> {
+    global_vars: &'a VarTable<'a>,
+    local_vars: Option<&'a VarTable<'a>>,
+}
+
+impl<'a> VarLookup<'a> {
+    fn new_local(global_vars: &'a VarTable<'a>, local_vars: &'a VarTable<'a>) -> Self {
+        let mut output = Self::new_global(global_vars);
+        output.local_vars = Some(local_vars);
+        output
+    }
+
+    fn new_global(global_vars: &'a VarTable<'a>) -> Self {
+        Self {
+            global_vars,
+            local_vars: None,
+        }
+    }
+
+    pub fn lookup(&self, name: &str) -> (&VarInfo, VariableType) {
+        if let Some(output) = self.local_lookup(name) {
+            output
+        } else {
+            (self.global_vars.get(name).unwrap(), VariableType::Global)
+        }
+    }
+
+    fn local_lookup(&self, name: &str) -> Option<(&VarInfo, VariableType)> {
+        match self.local_vars {
+            Some(local_vars) => {
+                if let Some(output) = local_vars.get(name) {
+                    Some((output, VariableType::Local))
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
+    }
+}
 
 pub enum VariableType {
     Global,
     Local,
 }
 
-pub struct VarCache<'a> {
-    global_vars: NameTable<'a>,
-    local_vars: NameTable<'a>,
-    var_count: KindCounter,
-}
-
-impl<'a> VarCache<'a> {
-    pub fn new() -> Self {
-        Self {
-            global_vars: NameTable::new(),
-            local_vars: NameTable::new(),
-            var_count: KindCounter::new(),
-        }
-    }
-
-    pub fn cache_global_vars(&mut self, var_decl_list: &'a VarDeclList) {
-        cache_var_decl_list(var_decl_list, &mut self.global_vars);
-    }
-
-    pub fn cache_params(&mut self, param_decl_list: &'a ParamList) {
-        for param in param_decl_list {
-            self.local_vars.insert(&param.id, &param.kind);
-        }
-    }
-
-    pub fn cache_local_vars(&mut self, var_decl_list: &'a VarDeclList) {
-        cache_var_decl_list(var_decl_list, &mut self.local_vars);
-    }
-
-    pub fn clear_local_vars(&mut self) {
-        self.var_count.reset();
-        self.local_vars.reset();
-    }
-
-    pub fn lookup(&self, name: &str) -> (&VarInfo, VariableType) {
-        if let Some(output) = self.local_vars.get(name) {
-            (output, VariableType::Local)
-        } else {
-            (self.global_vars.get(name).unwrap(), VariableType::Global)
-        }
+fn cache_param_decl<'a>(param_list: &'a ParamList, map: &mut NameTable<'a>) {
+    for param in param_list {
+        map.insert(&param.id, &param.kind);
     }
 }
 
@@ -64,9 +173,10 @@ fn cache_var_decl<'a>(var_decl: &'a VarDecl, map: &mut NameTable<'a>) {
 }
 
 type VarInfo = (Kind, AddrSize);
+type VarTable<'a> = HashMap<&'a str, VarInfo>;
 
 struct NameTable<'a> {
-    table: HashMap<&'a str, VarInfo>,
+    table: VarTable<'a>,
     counter: KindCounter,
 }
 
@@ -83,13 +193,10 @@ impl<'a> NameTable<'a> {
         self.table.insert(name, (k.clone(), index));
     }
 
-    fn get(&self, name: &str) -> Option<&(Kind, AddrSize)> {
-        self.table.get(name)
-    }
 
-    fn reset(&mut self) {
-        self.counter.reset();
-        self.table.clear();
+
+    fn get_table(self) -> VarTable<'a> {
+        self.table
     }
 }
 
@@ -166,27 +273,4 @@ mod test {
         counter.get_index(&Kind::Void);
     }
 
-    #[test]
-    fn test_name_table() {
-        let names = name_list("name", KIND_VECTOR.len());
-        let mut table = NameTable::new();
-        for (name, (kind, _)) in names.iter().zip(KIND_VECTOR.iter()) {
-            table.insert(name, kind);
-        }
-
-        assert_eq!(table.table.len(), names.len());
-
-        for (name, (kind, index)) in names.iter().zip(KIND_VECTOR.iter()) {
-            let (k, i) = table.get(name).unwrap();
-            assert_eq!(k, kind);
-            assert_eq!(i, index);
-        }
-
-        table.reset();
-        assert_eq!(table.table.len(), 0);
-    }
-
-    fn name_list(base: &str, count: usize) -> Vec<String> {
-        (0..count).map(|i| format!("{}_{}", base, i)).collect()
-    }
 }

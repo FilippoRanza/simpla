@@ -44,16 +44,14 @@ fn convert_error<'a>(res: Result<(), SemanticError<'a>>, code: &'a str) -> Resul
     }
 }
 
-
 #[cfg(test)]
 mod test {
 
     use super::*;
     use simpla_parser::ProgramParser;
-    use std::path::{PathBuf, Path};
     use std::fs::File;
     use std::io::Read;
-
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn test_variable_shadowing() {
@@ -67,11 +65,7 @@ mod test {
         if let Err(err) = result {
             assert!(false, "{}", err)
         }
-
-
     }
-
-
 
     fn load_file(file: &Path) -> String {
         let mut buff = String::new();
@@ -79,7 +73,4 @@ mod test {
         file.read_to_string(&mut buff).unwrap();
         buff
     }
-
 }
-
-
