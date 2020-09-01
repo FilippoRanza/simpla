@@ -53,9 +53,20 @@ fn save_to_file(arg: Arguments, code: Vec<u8>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn generate_ast(code: &str) -> Result<syntax_tree::Program, String> {
+fn parse_code(code: &str) -> Result<syntax_tree::Program, String> {
     let parser = simpla_parser::ProgramParser::new();
-    let program = parser.parse(code).unwrap();
+    let parse_result = parser.parse(code);
+    match parse_result {
+        Ok(ast) => Ok(ast),
+        Err(err) => {
+            let err = simpla_parser::format_syntax_error(code, err);
+            Err(err)
+        }
+    }
+}
+
+fn generate_ast(code: &str) -> Result<syntax_tree::Program, String> {
+    let program = parse_code(code)?;
     semantic_analysis::semantic_check(&program, code)?;
     Ok(program)
 }

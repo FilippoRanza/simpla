@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::simple_counter::{AddrSize, SimpleCounter};
-use simpla_parser::syntax_tree::{Kind, ParamList, VarDecl, VarDeclList, Program, FuncDecl};
+use simpla_parser::syntax_tree::{FuncDecl, Kind, ParamList, Program, VarDecl, VarDeclList};
 
 pub fn build_global_var_cache<'a>(prog: &'a Program) -> GlobalVarCache<'a> {
     let mut factory = GlobalVarCacheFactory::new();
@@ -15,13 +15,11 @@ pub fn build_global_var_cache<'a>(prog: &'a Program) -> GlobalVarCache<'a> {
     factory.build_var_cache()
 }
 
-
 fn build_local_var_cache<'a>(func: &'a FuncDecl, factory: &mut FunctionVarCacheFactory<'a>) {
     factory.insert_function(&func.id);
     factory.cache_params(&func.id, &func.params);
     factory.cache_local_vars(&func.id, &func.vars);
 }
-
 
 struct GlobalVarCacheFactory<'a> {
     global_vars: NameTable<'a>,
@@ -193,8 +191,6 @@ impl<'a> NameTable<'a> {
         self.table.insert(name, (k.clone(), index));
     }
 
-
-
     fn get_table(self) -> VarTable<'a> {
         self.table
     }
@@ -272,5 +268,4 @@ mod test {
         let mut counter = KindCounter::new();
         counter.get_index(&Kind::Void);
     }
-
 }

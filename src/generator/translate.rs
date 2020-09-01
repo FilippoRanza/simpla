@@ -13,7 +13,11 @@ pub fn translate_to_byte_code<'a>(prog: &'a Program) -> Vec<u8> {
     code_gen.get_result()
 }
 
-fn translate<'a>(prog: &'a Program, tranlator: &mut ByteCodeGenerator<'a>, global_cache: &'a GlobalVarCache<'a>) {
+fn translate<'a>(
+    prog: &'a Program,
+    tranlator: &mut ByteCodeGenerator<'a>,
+    global_cache: &'a GlobalVarCache<'a>,
+) {
     tranlator.gen_variables(&prog.global_vars, Scope::Global);
 
     tranlator.gen_block(&prog.body, BlockType::Main);

@@ -9,6 +9,7 @@ build = "build.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+extract_line_error = {path = "../extract_line_error", version = "0.1.0"}
 lalrpop-util = "0.19.0"
 regex = "1"
 

@@ -1,7 +1,6 @@
 mod analyze_return_stat;
 mod body_check;
 mod error_message_generator;
-mod extract_wrong_code;
 mod name_table;
 mod semantic_check;
 mod semantic_error;

@@ -5,10 +5,16 @@
 
 set -e 
 
-cd simpla_parser
-cargo build --verbose --all
-cargo test --verbose --all --  --nocapture
+function test_inner_crate() {
+    cd "$1"
+    cargo build --verbose --all
+    cargo test --verbose --all --  --nocapture
+    cd ..
+}
 
-cd ..
+test_inner_crate 'extract_line_error'
+
+test_inner_crate 'simpla_parser'
+
 cargo build --verbose --all
 cargo test --verbose --all --  --nocapture

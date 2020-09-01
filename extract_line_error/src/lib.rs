@@ -1,7 +1,5 @@
-use simpla_parser::syntax_tree::Location;
-
-pub fn format_wrong_code(code: &str, loc: &Location) -> String {
-    let (lines, token) = find_wrong_code(code, loc);
+pub fn extract_error_code(code: &str, begin: usize, end: usize) -> String {
+    let (lines, token) = find_wrong_code(code, begin, end);
 
     let block = &code[token.begin..token.end];
     let descr = match lines {
@@ -37,7 +35,7 @@ enum WrongLines {
     Multiple(usize, usize),
 }
 
-fn find_wrong_code(code: &str, loc: &Location) -> (WrongLines, Token) {
+fn find_wrong_code(code: &str, begin: usize, end: usize) -> (WrongLines, Token) {
     let mut curr_begin = 0;
     let mut begin_line = 0;
     let mut end_line = 0;
@@ -45,12 +43,12 @@ fn find_wrong_code(code: &str, loc: &Location) -> (WrongLines, Token) {
     let mut token = Token::new();
     for (n, line) in code.lines().enumerate() {
         let curr_end = curr_begin + line.len();
-        if (!stat) && curr_end >= loc.begin {
+        if (!stat) && curr_end >= begin {
             begin_line = n;
             token.set_begin(curr_begin);
             stat = true;
         }
-        if stat && curr_end >= loc.end {
+        if stat && curr_end >= end {
             end_line = n;
             token.set_end(curr_end);
             break;
@@ -87,22 +85,22 @@ mod test {
 
     lazy_static! {
         // word 'nostrum' on 6th line
-        static ref ONE_LINE_ERROR: Location = Location::new(193, 200);
+        static ref ONE_LINE_ERROR: (usize, usize) = (193, 200);
 
         //start with 'Ut' on 5th line end with 'ea' on 7th line
-        static ref MULTIPLE_LINE_ERROR: Location = Location::new(155, 265);
+        static ref MULTIPLE_LINE_ERROR: (usize, usize) = (155, 265);
     }
 
     #[test]
     fn test_wrong_code_constructor() {
-        let (lines, token) = find_wrong_code(CODE, &ONE_LINE_ERROR);
+        let (lines, token) = find_wrong_code(CODE, ONE_LINE_ERROR.0, ONE_LINE_ERROR.1);
         assert!(matches!(lines, WrongLines::Single(n)
              if n == 5));
 
         assert_eq!(token.begin, 180);
         assert_eq!(token.end, 235);
 
-        let (lines, token) = find_wrong_code(CODE, &MULTIPLE_LINE_ERROR);
+        let (lines, token) = find_wrong_code(CODE, MULTIPLE_LINE_ERROR.0, MULTIPLE_LINE_ERROR.1);
         assert!(matches!(lines, WrongLines::Multiple(begin, end)
              if begin == 4 && end == 6));
 
@@ -114,14 +112,14 @@ mod test {
     fn test_format_wrong_code() {
         let wrong_line = "        quis nostrum exercitationem ullamco laboriosam,";
         let correct_format = format!("Error on line: 6\n{}", wrong_line);
-        let ans = format_wrong_code(&CODE, &ONE_LINE_ERROR);
+        let ans = extract_error_code(&CODE, ONE_LINE_ERROR.0, ONE_LINE_ERROR.1);
         assert_eq!(correct_format, ans);
 
         let wrong_lines = r#"        et dolore magna aliqua. Ut enim ad minim veniam,
         quis nostrum exercitationem ullamco laboriosam,
         nisi ut aliquid ex ea commodi consequatur. "#;
         let correct_format = format!("Error from line: 5 to line: 7\n{}", wrong_lines);
-        let ans = format_wrong_code(&CODE, &MULTIPLE_LINE_ERROR);
+        let ans = extract_error_code(&CODE, MULTIPLE_LINE_ERROR.0, MULTIPLE_LINE_ERROR.1);
         assert_eq!(ans, correct_format);
     }
 }

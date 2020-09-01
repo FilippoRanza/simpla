@@ -2,8 +2,47 @@
 extern crate lalrpop_util;
 lalrpop_mod!(simpla);
 
+use lalrpop_util::lexer::Token;
+use lalrpop_util::ParseError;
+
+use extract_line_error::extract_error_code;
+
 pub mod syntax_tree;
 pub use simpla::ProgramParser;
+
+pub type SyntaxError<'a> = ParseError<usize, Token<'a>, &'static str>;
+
+pub fn format_syntax_error<'a>(code: &str, error: SyntaxError<'a>) -> String {
+    match error {
+        SyntaxError::ExtraToken {
+            token: (begin, _, end),
+        } => format!(
+            "Error: Extra Token:\n{}",
+            extract_error_code(code, begin, end)
+        ),
+        SyntaxError::InvalidToken { location: loc } => format!(
+            "Error: Invalid Token:\n{}",
+            extract_error_code(code, loc, loc)
+        ),
+        SyntaxError::UnrecognizedEOF {
+            location: loc,
+            expected: exp,
+        } => format!(
+            "Error: Unexpected EOF:\n{}\nExpecting: {}",
+            extract_error_code(code, loc, loc),
+            exp.join(", ")
+        ),
+        SyntaxError::UnrecognizedToken {
+            token: (begin, _, end),
+            expected: exp,
+        } => format!(
+            "Error: Unrecognized Token:\n{}\nExpecting {}",
+            extract_error_code(code, begin, end),
+            exp.join(", ")
+        ),
+        SyntaxError::User { error: e } => e.to_owned(),
+    }
+}
 
 #[cfg(test)]
 mod tests {

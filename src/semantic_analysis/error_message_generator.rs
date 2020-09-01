@@ -1,5 +1,5 @@
-use super::extract_wrong_code::format_wrong_code;
 use super::semantic_error;
+use extract_line_error::extract_error_code;
 use simpla_parser::syntax_tree;
 
 impl<'a> semantic_error::SemanticError<'a> {
@@ -42,6 +42,11 @@ impl<'a> semantic_error::SemanticError<'a> {
         format!("{}", msg)
     }
 }
+
+fn format_wrong_code(code: &str, loc: &syntax_tree::Location) -> String {
+    extract_error_code(code, loc.begin, loc.end)
+}
+
 impl semantic_error::NameRidefinition {
     fn format_error(&self, code: &str) -> String {
         format!(

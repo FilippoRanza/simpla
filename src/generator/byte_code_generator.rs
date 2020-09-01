@@ -2,7 +2,7 @@ use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
 use super::simple_counter::{AddrSize, SimpleCounter};
-use super::var_cache::{KindCounter, VariableType, VarLookup};
+use super::var_cache::{KindCounter, VarLookup, VariableType};
 
 use simpla_parser::syntax_tree;
 
@@ -15,7 +15,7 @@ pub struct ByteCodeGenerator<'a> {
     label_counter: SimpleCounter,
     param_counter: KindCounter,
     loop_exit_label: Vec<AddrSize>,
-    local_cache: VarLookup<'a> 
+    local_cache: VarLookup<'a>,
 }
 
 impl<'a> ByteCodeGenerator<'a> {
@@ -300,8 +300,6 @@ impl<'a> ByteCodeGenerator<'a> {
     pub fn switch_local_cache(&mut self, local: VarLookup<'a>) {
         self.local_cache = local;
     }
-
-
 }
 
 impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
@@ -331,7 +329,7 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
                 let ((_, id), _) = self.local_cache.lookup(var);
                 let id = match scope {
                     Scope::Global => *id,
-                    Scope::Local => {*id + LOCAL_MASK},
+                    Scope::Local => *id + LOCAL_MASK,
                 };
                 let (first, second) = init_command(&var_decl.kind);
                 let data = defaut_value(&var_decl.kind);
