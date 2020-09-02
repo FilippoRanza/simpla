@@ -58,7 +58,8 @@ pub const STRBP: u8 = 58; // 58 % 4 = 2
 pub const STRSP: u8 = 59; // 59 % 4 = 3
 pub const FUNC: u8 = 60;
 pub const NOT: u8 = 61;
-pub const NEG: u8 = 62;
+pub const NEGR: u8 = 62;
 pub const BFOR: u8 = 61;
 pub const CFOR: u8 = 62;
 pub const EFOR: u8 = 63;
+pub const NEGI: u8 = 64;

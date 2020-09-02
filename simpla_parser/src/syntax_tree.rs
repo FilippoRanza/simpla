@@ -244,7 +244,23 @@ pub enum ExprTree {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum Factor {
+pub struct Factor {
+    pub fact: FactorValue,
+    pub kind: RefCell<Option<Kind>>
+}
+
+impl Factor {
+    pub fn new(fact: FactorValue) -> Self {
+        Self {
+            fact,
+            kind : RefCell::new(None)
+        }
+    }
+}
+
+
+#[derive(PartialEq, Debug)]
+pub enum FactorValue {
     Id(String),
     UnaryOp(UnaryOp),
     CondExpr(CondExpr),

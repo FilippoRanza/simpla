@@ -92,15 +92,18 @@ fn check_factor<'a>(
     table: &'a LocalVariableTable,
     loc: &'a syntax_tree::Location,
 ) -> Result<syntax_tree::Kind, SemanticError<'a>> {
-    match fact {
-        syntax_tree::Factor::CastExpr(cast) => check_cast(cast, table, loc),
-        syntax_tree::Factor::CondExpr(cond) => check_conditional_expression(cond, table, loc),
-        syntax_tree::Factor::Const(val) => Ok(check_const(val)),
-        syntax_tree::Factor::FuncCall(func) => check_function_call(func, table, loc),
-        syntax_tree::Factor::HighPrecedence(expr) => type_check(expr, table),
-        syntax_tree::Factor::Id(name) => check_id(name, table),
-        syntax_tree::Factor::UnaryOp(unary) => check_unary_operator(unary, table, loc),
-    }
+    let kind = match &fact.fact {
+        syntax_tree::FactorValue::CastExpr(cast) => check_cast(cast, table, loc),
+        syntax_tree::FactorValue::CondExpr(cond) => check_conditional_expression(cond, table, loc),
+        syntax_tree::FactorValue::Const(val) => Ok(check_const(val)),
+        syntax_tree::FactorValue::FuncCall(func) => check_function_call(func, table, loc),
+        syntax_tree::FactorValue::HighPrecedence(expr) => type_check(expr, table),
+        syntax_tree::FactorValue::Id(name) => check_id(name, table),
+        syntax_tree::FactorValue::UnaryOp(unary) => check_unary_operator(unary, table, loc),
+    }?;
+
+    *fact.kind.borrow_mut() = Some(kind.clone());
+    Ok(kind)
 }
 
 fn check_cast<'a>(
@@ -278,7 +281,9 @@ mod test {
         let func_call = FuncCall::new(
             func_name_a.to_owned(),
             vec![Expr::new(
-                ExprTree::Factor(Factor::Id(var_name.to_owned())),
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                    var_name.to_owned(),
+                ))),
                 0,
                 0,
             )],
@@ -292,7 +297,9 @@ mod test {
         let func_call = FuncCall::new(
             func_name_b.to_owned(),
             vec![Expr::new(
-                ExprTree::Factor(Factor::Id(var_name.to_owned())),
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                    var_name.to_owned(),
+                ))),
                 0,
                 0,
             )],
@@ -328,12 +335,16 @@ mod test {
         let table = table_factory.factory_local_table();
 
         let correct_real_cast = CastExpr::Real(Box::new(Expr::new(
-            ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+            ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                int_var_name.to_owned(),
+            ))),
             0,
             0,
         )));
         let correct_int_cast = CastExpr::Integer(Box::new(Expr::new(
-            ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
+            ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                float_var_name.to_owned(),
+            ))),
             0,
             0,
         )));
@@ -348,12 +359,16 @@ mod test {
         );
 
         let wrong_int_cast = CastExpr::Integer(Box::new(Expr::new(
-            ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
+            ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                int_var_name.to_owned(),
+            ))),
             0,
             0,
         )));
         let wrong_real_cast = CastExpr::Real(Box::new(Expr::new(
-            ExprTree::Factor(Factor::Id(float_var_name.to_owned())),
+            ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                float_var_name.to_owned(),
+            ))),
             0,
             0,
         )));
@@ -385,13 +400,17 @@ mod test {
         let correct_numeric_expr = Box::new(Expr::new(
             ExprTree::Node(
                 Box::new(Expr::new(
-                    ExprTree::Factor(Factor::Const(Const::IntConst(4))),
+                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                        Const::IntConst(4),
+                    ))),
                     0,
                     0,
                 )),
                 Operator::Add,
                 Box::new(Expr::new(
-                    ExprTree::Factor(Factor::Const(Const::IntConst(12))),
+                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                        Const::IntConst(12),
+                    ))),
                     0,
                     0,
                 )),
@@ -402,13 +421,17 @@ mod test {
         let correct_boolean_expr = Box::new(Expr::new(
             ExprTree::Node(
                 Box::new(Expr::new(
-                    ExprTree::Factor(Factor::Const(Const::BoolConst(false))),
+                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                        Const::BoolConst(false),
+                    ))),
                     0,
                     0,
                 )),
                 Operator::Or,
                 Box::new(Expr::new(
-                    ExprTree::Factor(Factor::Const(Const::BoolConst(true))),
+                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                        Const::BoolConst(true),
+                    ))),
                     0,
                     0,
                 )),
@@ -417,10 +440,12 @@ mod test {
             0,
         ));
 
-        let correct_numeric_unary =
-            UnaryOp::Minus(Box::new(Factor::HighPrecedence(correct_numeric_expr)));
-        let correct_boolean_unary =
-            UnaryOp::Negate(Box::new(Factor::HighPrecedence(correct_boolean_expr)));
+        let correct_numeric_unary = UnaryOp::Minus(Box::new(syntax_tree::Factor::new(
+            FactorValue::HighPrecedence(correct_numeric_expr),
+        )));
+        let correct_boolean_unary = UnaryOp::Negate(Box::new(syntax_tree::Factor::new(
+            FactorValue::HighPrecedence(correct_boolean_expr),
+        )));
 
         assert_eq!(
             check_unary_operator(&correct_numeric_unary, &table, &Location::new(0, 0)),
@@ -500,13 +525,17 @@ mod test {
             Expr::new(
                 ExprTree::Node(
                     Box::new(Expr::new(
-                        ExprTree::Factor(Factor::Id(real_var_name.to_owned())),
+                        ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                            real_var_name.to_owned(),
+                        ))),
                         0,
                         0,
                     )),
                     Operator::Greater,
                     Box::new(Expr::new(
-                        ExprTree::Factor(Factor::Const(Const::RealConst(4.5))),
+                        ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                            Const::RealConst(4.5),
+                        ))),
                         0,
                         0,
                     )),
@@ -515,31 +544,39 @@ mod test {
                 15,
             ),
             Expr::new(
-                ExprTree::Factor(Factor::FuncCall(FuncCall::new(
-                    str_func_name.to_owned(),
-                    vec![Expr::new(
-                        ExprTree::Node(
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
-                                0,
-                                0,
-                            )),
-                            Operator::Mul,
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Const(Const::IntConst(21))),
-                                0,
-                                0,
-                            )),
-                        ),
-                        56,
-                        156,
-                    )],
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::FuncCall(
+                    FuncCall::new(
+                        str_func_name.to_owned(),
+                        vec![Expr::new(
+                            ExprTree::Node(
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                                        int_var_name.to_owned(),
+                                    ))),
+                                    0,
+                                    0,
+                                )),
+                                Operator::Mul,
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                                        Const::IntConst(21),
+                                    ))),
+                                    0,
+                                    0,
+                                )),
+                            ),
+                            56,
+                            156,
+                        )],
+                    ),
                 ))),
                 0,
                 0,
             ),
             Expr::new(
-                ExprTree::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                    Const::StrConst("test".to_owned()),
+                ))),
                 0,
                 0,
             ),
@@ -556,13 +593,17 @@ mod test {
             Expr::new(
                 ExprTree::Node(
                     Box::new(Expr::new(
-                        ExprTree::Factor(Factor::Id(real_var_name.to_owned())),
+                        ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                            real_var_name.to_owned(),
+                        ))),
                         0,
                         0,
                     )),
                     Operator::Greater,
                     Box::new(Expr::new(
-                        ExprTree::Factor(Factor::Const(Const::RealConst(4.5))),
+                        ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                            Const::RealConst(4.5),
+                        ))),
                         0,
                         0,
                     )),
@@ -571,30 +612,42 @@ mod test {
                 125,
             ),
             Expr::new(
-                ExprTree::Factor(Factor::FuncCall(FuncCall::new(
-                    str_func_name.to_owned(),
-                    vec![Expr::new(
-                        ExprTree::Node(
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
-                                0,
-                                0,
-                            )),
-                            Operator::Mul,
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Const(Const::IntConst(21))),
-                                0,
-                                0,
-                            )),
-                        ),
-                        0,
-                        0,
-                    )],
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::FuncCall(
+                    FuncCall::new(
+                        str_func_name.to_owned(),
+                        vec![Expr::new(
+                            ExprTree::Node(
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                                        int_var_name.to_owned(),
+                                    ))),
+                                    0,
+                                    0,
+                                )),
+                                Operator::Mul,
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                                        Const::IntConst(21),
+                                    ))),
+                                    0,
+                                    0,
+                                )),
+                            ),
+                            0,
+                            0,
+                        )],
+                    ),
                 ))),
                 156,
                 234,
             ),
-            Expr::new(ExprTree::Factor(Factor::Const(Const::IntConst(41))), 0, 0),
+            Expr::new(
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                    Const::IntConst(41),
+                ))),
+                0,
+                0,
+            ),
         );
 
         assert_eq!(
@@ -608,13 +661,17 @@ mod test {
             Expr::new(
                 ExprTree::Node(
                     Box::new(Expr::new(
-                        ExprTree::Factor(Factor::Id(real_var_name.to_owned())),
+                        ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                            real_var_name.to_owned(),
+                        ))),
                         0,
                         0,
                     )),
                     Operator::Add,
                     Box::new(Expr::new(
-                        ExprTree::Factor(Factor::Const(Const::RealConst(4.5))),
+                        ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                            Const::RealConst(4.5),
+                        ))),
                         0,
                         0,
                     )),
@@ -623,31 +680,39 @@ mod test {
                 24,
             ),
             Expr::new(
-                ExprTree::Factor(Factor::FuncCall(FuncCall::new(
-                    str_func_name.to_owned(),
-                    vec![Expr::new(
-                        ExprTree::Node(
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Id(int_var_name.to_owned())),
-                                0,
-                                0,
-                            )),
-                            Operator::Mul,
-                            Box::new(Expr::new(
-                                ExprTree::Factor(Factor::Const(Const::IntConst(21))),
-                                0,
-                                0,
-                            )),
-                        ),
-                        56,
-                        100,
-                    )],
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::FuncCall(
+                    FuncCall::new(
+                        str_func_name.to_owned(),
+                        vec![Expr::new(
+                            ExprTree::Node(
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Id(
+                                        int_var_name.to_owned(),
+                                    ))),
+                                    0,
+                                    0,
+                                )),
+                                Operator::Mul,
+                                Box::new(Expr::new(
+                                    ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                                        Const::IntConst(21),
+                                    ))),
+                                    0,
+                                    0,
+                                )),
+                            ),
+                            56,
+                            100,
+                        )],
+                    ),
                 ))),
                 56,
                 100,
             ),
             Expr::new(
-                ExprTree::Factor(Factor::Const(Const::StrConst("test".to_owned()))),
+                ExprTree::Factor(syntax_tree::Factor::new(FactorValue::Const(
+                    Const::StrConst("test".to_owned()),
+                ))),
                 0,
                 0,
             ),

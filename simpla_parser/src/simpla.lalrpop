@@ -172,16 +172,20 @@ LowTerm: syntax_tree::Expr = {
 
 
 Factor: syntax_tree::Factor = {
-    <id: Id> => syntax_tree::Factor::Id(id),
-    <unary: UnaryOp> => syntax_tree::Factor::UnaryOp(<>),
-    <cond: CondExpr> => syntax_tree::Factor::CondExpr(<>),
-    <cast: CastExpr> => syntax_tree::Factor::CastExpr(<>),
-    <fcall: FuncCall> => syntax_tree::Factor::FuncCall(<>),
-    <ConstFactor> => syntax_tree::Factor::Const(<>),
+    <id: Id> => syntax_tree::Factor::new(syntax_tree::FactorValue::Id(id)),
+    <unary: UnaryOp> => syntax_tree::Factor::new(syntax_tree::FactorValue::UnaryOp(<>)),
+    <cond: CondExpr> => syntax_tree::Factor::new(syntax_tree::FactorValue::CondExpr(<>)),
+    <cast: CastExpr> => syntax_tree::Factor::new(syntax_tree::FactorValue::CastExpr(<>)),
+    <fcall: FuncCall> => syntax_tree::Factor::new(syntax_tree::FactorValue::FuncCall(<>)),
+    <ConstFactor> => syntax_tree::Factor::new(syntax_tree::FactorValue::Const(<>)),
     OpenBracketPunct <e: Expr> CloseBracketPunct => {
         match e.expr {
-            syntax_tree::ExprTree::Factor(syntax_tree::Factor::HighPrecedence(e)) => syntax_tree::Factor::HighPrecedence(e),
-            _ => syntax_tree::Factor::HighPrecedence(Box::new(e))
+            syntax_tree::ExprTree::Factor(
+                syntax_tree::Factor{
+                    fact: syntax_tree::FactorValue::HighPrecedence(e), kind: _
+                }
+            ) => syntax_tree::Factor::new(syntax_tree::FactorValue::HighPrecedence(e)),
+            _ => syntax_tree::Factor::new(syntax_tree::FactorValue::HighPrecedence(Box::new(e)))
         }
     },
 }

@@ -317,8 +317,8 @@ mod test {
         let stat = syntax_tree::AssignStat::new(
             var_name.to_owned(),
             syntax_tree::Expr::new(
-                syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(
-                    syntax_tree::Const::IntConst(7),
+                syntax_tree::ExprTree::Factor(syntax_tree::Factor::new(
+                    syntax_tree::FactorValue::Const(syntax_tree::Const::IntConst(7)),
                 )),
                 0,
                 0,
@@ -367,8 +367,8 @@ mod test {
         let stat = syntax_tree::AssignStat::new(
             var_name.to_owned(),
             syntax_tree::Expr::new(
-                syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(
-                    syntax_tree::Const::RealConst(7.5),
+                syntax_tree::ExprTree::Factor(syntax_tree::Factor::new(
+                    syntax_tree::FactorValue::Const(syntax_tree::Const::RealConst(7.5)),
                 )),
                 0,
                 0,
@@ -422,8 +422,8 @@ mod test {
     #[test]
     fn test_check_return_stat() {
         let return_stat = Some(syntax_tree::Expr::new(
-            syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(
-                syntax_tree::Const::RealConst(2.3),
+            syntax_tree::ExprTree::Factor(syntax_tree::Factor::new(
+                syntax_tree::FactorValue::Const(syntax_tree::Const::RealConst(2.3)),
             )),
             0,
             0,
@@ -628,7 +628,9 @@ mod test {
 
     fn make_constant_expr(const_val: syntax_tree::Const) -> syntax_tree::Expr {
         syntax_tree::Expr::new(
-            syntax_tree::ExprTree::Factor(syntax_tree::Factor::Const(const_val)),
+            syntax_tree::ExprTree::Factor(syntax_tree::Factor::new(
+                syntax_tree::FactorValue::Const(const_val),
+            )),
             0,
             0,
         )

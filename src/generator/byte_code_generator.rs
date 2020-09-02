@@ -83,14 +83,14 @@ impl<'a> ByteCodeGenerator<'a> {
         }
     }
     fn convert_factor(&mut self, fact: &'a syntax_tree::Factor) {
-        match fact {
-            syntax_tree::Factor::Id(id) => self.load_variable(id),
-            syntax_tree::Factor::CastExpr(cast) => self.convert_cast_expr(cast),
-            syntax_tree::Factor::CondExpr(cond_expr) => self.convert_cond_expr(cond_expr),
-            syntax_tree::Factor::Const(cons) => self.convert_constant(cons),
-            syntax_tree::Factor::FuncCall(f_call) => self.convert_func_call(f_call),
-            syntax_tree::Factor::HighPrecedence(expr) => self.convert_expression(expr),
-            syntax_tree::Factor::UnaryOp(unary) => self.convert_unary_op(unary),
+        match &fact.fact {
+            syntax_tree::FactorValue::Id(id) => self.load_variable(id),
+            syntax_tree::FactorValue::CastExpr(cast) => self.convert_cast_expr(cast),
+            syntax_tree::FactorValue::CondExpr(cond_expr) => self.convert_cond_expr(cond_expr),
+            syntax_tree::FactorValue::Const(cons) => self.convert_constant(cons),
+            syntax_tree::FactorValue::FuncCall(f_call) => self.convert_func_call(f_call),
+            syntax_tree::FactorValue::HighPrecedence(expr) => self.convert_expression(expr),
+            syntax_tree::FactorValue::UnaryOp(unary) => self.convert_unary_op(unary),
         }
     }
 
@@ -108,7 +108,10 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn convert_unary_op(&mut self, unary: &'a syntax_tree::UnaryOp) {
         let (fact, mode) = match unary {
-            syntax_tree::UnaryOp::Minus(fact) => (fact, UnaryOp::IntNeg),
+            syntax_tree::UnaryOp::Minus(fact) => (
+                fact,
+                UnaryOp::from_kind(fact.kind.borrow().as_ref().unwrap()),
+            ),
             syntax_tree::UnaryOp::Negate(fact) => (fact, UnaryOp::BoolNeg),
         };
         self.convert_factor(fact);
@@ -391,13 +394,23 @@ impl CastOp {
 
 enum UnaryOp {
     IntNeg,
+    RealNeg,
     BoolNeg,
 }
 
 impl UnaryOp {
+    fn from_kind(kind: &syntax_tree::Kind) -> Self {
+        match kind {
+            syntax_tree::Kind::Int => Self::IntNeg,
+            syntax_tree::Kind::Real => Self::RealNeg,
+            _ => unreachable!(),
+        }
+    }
+
     fn get_command(&self) -> u8 {
         match self {
-            Self::IntNeg => opcode::NEG,
+            Self::RealNeg => opcode::NEGR,
+            Self::IntNeg => opcode::NEGI,
             Self::BoolNeg => opcode::NOT,
         }
     }
