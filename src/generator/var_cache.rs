@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::simple_counter::{AddrSize, SimpleCounter};
 use simpla_parser::syntax_tree::{FuncDecl, Kind, ParamList, Program, VarDecl, VarDeclList};
 
-pub fn build_global_var_cache<'a>(prog: &'a Program) -> GlobalVarCache<'a> {
+pub fn build_global_var_cache<'a>(prog: &'a Program) -> (GlobalVarCache<'a>, ParameterAddress<'a>) {
     let mut factory = GlobalVarCacheFactory::new();
     factory.cache_global_vars(&prog.global_vars);
 
@@ -44,6 +44,7 @@ impl<'a> GlobalVarCacheFactory<'a> {
 struct FunctionVarCacheFactory<'a> {
     global_vars: NameTable<'a>,
     function_vars: HashMap<&'a str, NameTable<'a>>,
+    param_addr: HashMap<&'a str, Vec<AddrSize>>,
 }
 
 impl<'a> FunctionVarCacheFactory<'a> {
@@ -51,6 +52,7 @@ impl<'a> FunctionVarCacheFactory<'a> {
         Self {
             global_vars,
             function_vars: HashMap::new(),
+            param_addr: HashMap::new(),
         }
     }
 
@@ -69,14 +71,33 @@ impl<'a> FunctionVarCacheFactory<'a> {
 
     fn cache_params(&mut self, name: &'a str, param_decl_list: &'a ParamList) {
         if let Some(curr) = self.function_vars.get_mut(name) {
-            cache_param_decl(param_decl_list, curr);
+            let param_addr = cache_param_decl(param_decl_list, curr);
+            self.param_addr.insert(name, param_addr);
         } else {
             panic!();
         }
     }
 
-    fn build_var_cache(self) -> GlobalVarCache<'a> {
-        GlobalVarCache::new(self.global_vars, self.function_vars)
+    fn build_var_cache(self) -> (GlobalVarCache<'a>, ParameterAddress<'a>) {
+        (
+            GlobalVarCache::new(self.global_vars, self.function_vars),
+            ParameterAddress::new(self.param_addr),
+        )
+    }
+}
+
+pub struct ParameterAddress<'a> {
+    param_addr: HashMap<&'a str, Vec<AddrSize>>,
+}
+
+impl<'a> ParameterAddress<'a> {
+    fn new(param_addr: HashMap<&'a str, Vec<AddrSize>>) -> Self {
+        Self { param_addr }
+    }
+
+    pub fn get_parameter_address(&self, name: &str, index: usize) -> AddrSize {
+        let vect = self.param_addr.get(name).unwrap();
+        vect[index]
     }
 }
 
@@ -152,10 +173,13 @@ pub enum VariableType {
     Local,
 }
 
-fn cache_param_decl<'a>(param_list: &'a ParamList, map: &mut NameTable<'a>) {
+fn cache_param_decl<'a>(param_list: &'a ParamList, map: &mut NameTable<'a>) -> Vec<AddrSize> {
+    let mut output = Vec::with_capacity(param_list.len());
     for param in param_list {
-        map.insert(&param.id, &param.kind);
+        let index = map.insert(&param.id, &param.kind);
+        output.push(index);
     }
+    output
 }
 
 fn cache_var_decl_list<'a>(var_decl_list: &'a VarDeclList, map: &mut NameTable<'a>) {
@@ -186,9 +210,10 @@ impl<'a> NameTable<'a> {
         }
     }
 
-    fn insert(&mut self, name: &'a str, k: &Kind) {
+    fn insert(&mut self, name: &'a str, k: &Kind) -> AddrSize {
         let index = self.counter.get_index(k);
         self.table.insert(name, (k.clone(), index));
+        index
     }
 
     fn get_table(self) -> VarTable<'a> {
@@ -223,7 +248,8 @@ impl KindCounter {
         }
     }
 
-    pub fn reset(&mut self) {
+    #[allow(dead_code)]
+    fn reset(&mut self) {
         self.bool_count.reset();
         self.int_count.reset();
         self.real_count.reset();

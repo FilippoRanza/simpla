@@ -2,7 +2,7 @@ use super::code_generator::*;
 use super::function_index::FunctionIndex;
 use super::opcode;
 use super::simple_counter::{AddrSize, SimpleCounter};
-use super::var_cache::{KindCounter, VarLookup, VariableType};
+use super::var_cache::{ParameterAddress, VarLookup, VariableType};
 
 use simpla_parser::syntax_tree;
 
@@ -13,20 +13,24 @@ pub struct ByteCodeGenerator<'a> {
     buff: Vec<u8>,
     function_index: FunctionIndex<'a>,
     label_counter: SimpleCounter,
-    param_counter: KindCounter,
     loop_exit_label: Vec<AddrSize>,
     local_cache: VarLookup<'a>,
+    param_addr: ParameterAddress<'a>,
 }
 
 impl<'a> ByteCodeGenerator<'a> {
-    pub fn new(function_index: FunctionIndex<'a>, local_cache: VarLookup<'a>) -> Self {
+    pub fn new(
+        function_index: FunctionIndex<'a>,
+        local_cache: VarLookup<'a>,
+        param_addr: ParameterAddress<'a>,
+    ) -> Self {
         Self {
             buff: Vec::new(),
             local_cache,
             function_index,
             label_counter: SimpleCounter::new(),
             loop_exit_label: Vec::new(),
-            param_counter: KindCounter::new(),
+            param_addr,
         }
     }
     fn insert_multi_byte_command(&mut self, cmd: u8, data: &[u8]) {
@@ -276,10 +280,11 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn convert_func_call(&mut self, func_call: &'a syntax_tree::FuncCall) {
         self.buff.push(opcode::PARAM);
-        for expr in &func_call.args {
-            self.convert_parameter(expr);
+
+        for (index, expr) in func_call.args.iter().enumerate() {
+            let addr = self.param_addr.get_parameter_address(&func_call.id, index);
+            self.convert_parameter(expr, addr);
         }
-        self.param_counter.reset();
 
         self.insert_address_command(
             opcode::CALL,
@@ -287,13 +292,13 @@ impl<'a> ByteCodeGenerator<'a> {
         );
     }
 
-    fn convert_parameter(&mut self, expr: &'a syntax_tree::Expr) {
+    fn convert_parameter(&mut self, expr: &'a syntax_tree::Expr, addr: AddrSize) {
         self.convert_expression(expr);
         let expr_kind = expr.kind.borrow();
         let kind = expr_kind.as_ref().unwrap();
         let store = store_param_by_kind(&kind);
         self.buff.push(store);
-        let param_id = self.param_counter.get_index(&kind) + LOCAL_MASK;
+        let param_id = addr + LOCAL_MASK;
         self.insert_bytes(&param_id.to_be_bytes());
     }
 
