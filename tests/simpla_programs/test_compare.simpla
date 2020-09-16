@@ -1,0 +1,28 @@
+a, b : string;
+c, d: boolean;
+
+
+body
+    a = "ciao";
+    b = "fine";
+
+    if c == d then
+        writeln("OK");
+    else
+        writeln(":-(");
+    end;
+
+    if a == b then
+        writeln("AAA");
+    end;
+
+
+    writeln("Insert Name:");
+    read(a);
+    if a == "Filippo" then
+        writeln("Hello, this is my creator's name");
+    else 
+        writeln("Hello, ", a);
+    end;
+
+end.

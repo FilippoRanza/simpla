@@ -1,0 +1,46 @@
+i: integer;
+b: boolean;
+r: real;
+
+func even(i: integer) : boolean
+body
+    return ((i / 2) * 2) - i == 0;
+end;
+
+func absr(r: real): real
+body
+    return if r < 0.0 then -r else r end; 
+end;
+
+func absi(i: integer) : integer
+body
+    return if i < 0 then -i else i end; 
+end;
+
+
+
+body
+    b = true;
+    for i = 0 to 10 do
+        b = not b;
+        writeln(i, " ", even(i));
+        writeln(b);
+    end;
+
+
+    for i = -10 to 10 do
+        r = real(i);
+        writeln("abs(", r, ")=", absr(r));
+        writeln("abs(", i, ")=", absi(i));
+    end;
+
+end.
+
+
+
+
+
+
+
+
+
