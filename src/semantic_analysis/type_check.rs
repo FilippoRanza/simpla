@@ -74,7 +74,7 @@ fn coherent_operation<'a>(
                 }
             },
             OperatorKind::Relational => match left {
-                syntax_tree::Kind::Int | syntax_tree::Kind::Real => Ok(syntax_tree::Kind::Bool),
+                syntax_tree::Kind::Int | syntax_tree::Kind::Real | syntax_tree::Kind::Bool | syntax_tree::Kind::Str => Ok(syntax_tree::Kind::Bool),
                 _ => {
                     let err = IncoherentOperation::new(left, op.clone(), loc);
                     Err(SemanticError::IncoherentOperation(err))
@@ -745,11 +745,10 @@ mod test {
             Operator::Greater,
             Operator::GreaterEqual,
         ] {
-            for kind in &[Kind::Real, Kind::Int] {
+            for kind in &[Kind::Real, Kind::Int, Kind::Bool, Kind::Str] {
                 run_correct_coherent_test(kind, op, kind, &Kind::Bool);
             }
 
-            run_inchoerent_operation(&Kind::Bool, op, &Kind::Bool);
         }
 
         for op in &[Operator::And, Operator::Or] {
@@ -762,9 +761,7 @@ mod test {
         // in this case the only error is mismatched types
         run_mismatched_types_test(&Kind::Real, &Operator::Sub, &Kind::Int);
 
-        //here also the operation is not applicable, but the mismatch is more important
         run_mismatched_types_test(&Kind::Bool, &Operator::Less, &Kind::Int);
-
         run_mismatched_types_test(&Kind::Int, &Operator::Add, &Kind::Real);
     }
 

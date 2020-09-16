@@ -63,3 +63,17 @@ pub const EFOR: u8 = 63;
 pub const NEGI: u8 = 64;
 pub const NEGR: u8 = 65;
 pub const NOT: u8 = 66;
+
+pub const GEQS: u8 = 67;
+pub const GRS: u8 = 68;
+pub const LEQS: u8 = 69;
+pub const LESQS: u8 = 70;
+pub const EQS: u8 = 71;
+pub const NES: u8 = 72;
+
+pub const GEQB: u8 = 73;
+pub const GRB: u8 = 74;
+pub const LEQB: u8 = 75;
+pub const LESQB: u8 = 76;
+pub const EQB: u8 = 77;
+pub const NEB: u8 = 78;

@@ -481,7 +481,7 @@ fn operator_by_kind(op: &syntax_tree::Operator, k: &syntax_tree::Kind) -> u8 {
         syntax_tree::Kind::Int => integer_operator(op),
         syntax_tree::Kind::Real => real_operator(op),
         syntax_tree::Kind::Bool => bool_operator(op),
-        syntax_tree::Kind::Str => unreachable!(),
+        syntax_tree::Kind::Str => str_operator(op),
         syntax_tree::Kind::Void => unreachable!(),
     }
 }
@@ -520,10 +520,34 @@ fn real_operator(op: &syntax_tree::Operator) -> u8 {
     }
 }
 
+
+
+
 fn bool_operator(op: &syntax_tree::Operator) -> u8 {
     match op {
         syntax_tree::Operator::And => opcode::AND,
         syntax_tree::Operator::Or => opcode::OR,
+        syntax_tree::Operator::Equal => opcode::EQB,
+        syntax_tree::Operator::NotEqual => opcode::NEB,
+        syntax_tree::Operator::Greater => opcode::GRB,
+        syntax_tree::Operator::GreaterEqual => opcode::GEQB,
+        syntax_tree::Operator::Less => opcode::LESQB,
+        syntax_tree::Operator::LessEqual => opcode::LEQB,
         _ => unreachable!(),
     }
 }
+
+fn str_operator(op: &syntax_tree::Operator) -> u8 {
+    match op {
+        syntax_tree::Operator::And => opcode::AND,
+        syntax_tree::Operator::Or => opcode::OR,
+        syntax_tree::Operator::Equal => opcode::EQS,
+        syntax_tree::Operator::NotEqual => opcode::NES,
+        syntax_tree::Operator::Greater => opcode::GRS,
+        syntax_tree::Operator::GreaterEqual => opcode::GEQS,
+        syntax_tree::Operator::Less => opcode::LESQS,
+        syntax_tree::Operator::LessEqual => opcode::LEQS,
+        _ => unreachable!(),
+    }
+}
+
