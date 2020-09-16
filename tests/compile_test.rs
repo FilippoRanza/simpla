@@ -15,7 +15,7 @@ fn test_source_bytecode_translation() {
 }
 
 fn bytecode_translation_test(file: &Path, target: &tempfile::TempDir) {
-    let target_name = format!("{}c", file.to_str().unwrap());
+    let target_name = format!("{}c", file.file_name().unwrap().to_str().unwrap());
     let simpla_bytecode = target.path().join(target_name);
     run_compile("translate", file, &simpla_bytecode);
 }

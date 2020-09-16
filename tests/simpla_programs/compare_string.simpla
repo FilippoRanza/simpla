@@ -8,42 +8,42 @@ body
     if a == b then
         writeln(count);
     end;
-    count += 1;
+    count = count + 1;
 
     read(a);
     read(b);
     if a != b then
         writeln(count);
     end;
-    count += 1;
+    count = count + 1;
 
     read(a);
     read(b);
     if a >= b then
         writeln(count);
     end;
-    count += 1;
+    count = count + 1;
 
     read(a);
     read(b);
     if a <= b then
         writeln(count);
     end;
-    count += 1;
+    count = count + 1;
 
     read(a);
     read(b);
     if a > b then
         writeln(count);
     end;
-    count += 1;
+    count = count + 1;
 
     read(a);
     read(b);
     if a < b then
         writeln(count);
     end;
-    count += 1;
+    count = count + 1;
     
 
 end.

@@ -104,8 +104,12 @@ fn run_program(action: Action) -> Result<(), String> {
 fn main() {
     let args = Action::from_args();
 
-    match run_program(args) {
-        Ok(()) => {}
-        Err(msg) => eprintln!("{}", msg),
-    }
+    let exit = match run_program(args) {
+        Ok(()) => 0,
+        Err(msg) => {
+            eprintln!("{}", msg);
+            1
+        },
+    };
+    std::process::exit(exit);
 }
