@@ -1,0 +1,53 @@
+a, b: string;
+count : integer;
+
+body
+
+    read(a);
+    read(b);
+    if a == b then
+        writeln(count);
+    end;
+    count += 1;
+
+    read(a);
+    read(b);
+    if a != b then
+        writeln(count);
+    end;
+    count += 1;
+
+    read(a);
+    read(b);
+    if a >= b then
+        writeln(count);
+    end;
+    count += 1;
+
+    read(a);
+    read(b);
+    if a <= b then
+        writeln(count);
+    end;
+    count += 1;
+
+    read(a);
+    read(b);
+    if a > b then
+        writeln(count);
+    end;
+    count += 1;
+
+    read(a);
+    read(b);
+    if a < b then
+        writeln(count);
+    end;
+    count += 1;
+    
+
+end.
+
+
+
+
