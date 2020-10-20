@@ -8,16 +8,22 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 #[derive(StructOpt, Debug)]
+#[structopt(about = "Compile or Check a Simpla program")]
 enum Action {
-    #[structopt(about = "Check for program correctness")]
-    Check { source_file: PathBuf },
-    #[structopt(about = "Compile a Simpla program to simplac bytecode")]
+    #[structopt(about = "Check a Simpla program for correctness")]
+    Check { 
+        #[structopt(help = "Simpla source code input file")]
+        source_file: PathBuf 
+    },
+    #[structopt(about = "Compile a Simpla program to Simpla bytecode")]
     Translate(Arguments),
 }
 
 #[derive(StructOpt, Debug)]
 struct Arguments {
+    #[structopt(help = "Simpla source code input file")]
     source_file: PathBuf,
+    #[structopt(help = "Simpla bytecode output file")]
     output_file: Option<PathBuf>,
 }
 
