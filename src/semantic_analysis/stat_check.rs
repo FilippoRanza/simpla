@@ -41,7 +41,7 @@ fn stat_check<'b, 'a: 'b>(
         syntax_tree::StatType::IfStat(if_stat) => {
             check_if_stat(if_stat, table, contex, loop_contex, &stat.loc)
         }
-        syntax_tree::StatType::ReadStat(read_stat) => check_read_stat(read_stat, table, loop_contex),
+        syntax_tree::StatType::ReadStat(read_stat) => check_read_stat(read_stat, table, loop_contex, &stat.loc),
         syntax_tree::StatType::ReturnStat(return_stat) => {
             check_return_stat(return_stat, table, contex, &stat.loc)
         }
@@ -220,13 +220,17 @@ fn check_if_stat<'b, 'a: 'b>(
 fn check_read_stat<'a>(
     read_stat: &'a syntax_tree::IdList,
     table: &'a LocalVariableTable,
-    contex: &LoopContext
+    contex: &LoopContext,
+    loc: &'a syntax_tree::Location,
 ) -> Result<(), SemanticError<'a>> {
     for id in read_stat {
         table.get_variable(id)?;
         match contex.check_assign(id) {
             CheckStatus::Success => {},
-            CheckStatus::Failure => {}
+            CheckStatus::Failure => {
+                let err = ForLoopError::new_count_variable_assignment(loc, id);
+                return Err(SemanticError::ForLoopError(err));
+            }
         }
     }
     Ok(())
