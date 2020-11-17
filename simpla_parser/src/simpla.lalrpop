@@ -1,6 +1,7 @@
 
 use crate::syntax_tree;
 
+#[LALR]
 grammar;
 
 pub Program : syntax_tree::Program = {
