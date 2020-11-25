@@ -41,7 +41,9 @@ fn stat_check<'b, 'a: 'b>(
         syntax_tree::StatType::IfStat(if_stat) => {
             check_if_stat(if_stat, table, contex, loop_contex, &stat.loc)
         }
-        syntax_tree::StatType::ReadStat(read_stat) => check_read_stat(read_stat, table, loop_contex, &stat.loc),
+        syntax_tree::StatType::ReadStat(read_stat) => {
+            check_read_stat(read_stat, table, loop_contex, &stat.loc)
+        }
         syntax_tree::StatType::ReturnStat(return_stat) => {
             check_return_stat(return_stat, table, contex, &stat.loc)
         }
@@ -69,7 +71,7 @@ enum CheckStatus {
     Failure,
 }
 
-struct  LoopContext<'a> {
+struct LoopContext<'a> {
     indexes: HashSet<&'a str>,
     nested_loops: usize,
 }
@@ -226,7 +228,7 @@ fn check_read_stat<'a>(
     for id in read_stat {
         table.get_variable(id)?;
         match contex.check_assign(id) {
-            CheckStatus::Success => {},
+            CheckStatus::Success => {}
             CheckStatus::Failure => {
                 let err = ForLoopError::new_count_variable_assignment(loc, id);
                 return Err(SemanticError::ForLoopError(err));

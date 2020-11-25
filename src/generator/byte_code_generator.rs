@@ -8,6 +8,7 @@ use simpla_parser::syntax_tree;
 
 const ADDR_SIZE_ZERO: AddrSize = 0;
 const LOCAL_MASK: AddrSize = 1 << (ADDR_SIZE_ZERO.count_zeros() - 1);
+const MAX_STR_LEN : usize = (1 << (ADDR_SIZE_ZERO.count_zeros())) - 1;
 
 pub struct ByteCodeGenerator<'a> {
     buff: Vec<u8>,
@@ -143,9 +144,10 @@ impl<'a> ByteCodeGenerator<'a> {
     }
 
     fn insert_string(&mut self, s: &str) {
-        let len = s.len() as AddrSize;
+        let str_bytes = truncate_str_to_byte_len(s, MAX_STR_LEN);
+        let len = str_bytes.len() as AddrSize;
         self.insert_multi_byte_command(opcode::LDSC, &len.to_be_bytes());
-        self.insert_bytes(s.as_bytes());
+        self.insert_bytes(str_bytes);
     }
 
     fn assign_value(&mut self, name: &str) {
@@ -520,9 +522,6 @@ fn real_operator(op: &syntax_tree::Operator) -> u8 {
     }
 }
 
-
-
-
 fn bool_operator(op: &syntax_tree::Operator) -> u8 {
     match op {
         syntax_tree::Operator::And => opcode::AND,
@@ -551,3 +550,44 @@ fn str_operator(op: &syntax_tree::Operator) -> u8 {
     }
 }
 
+fn truncate_str_to_byte_len(string: &str, byte_count: usize) -> &[u8] {
+    let mut output_len = if string.len() > byte_count {
+        byte_count
+    } else {
+        string.len()
+    };
+    while !string.is_char_boundary(output_len) {
+        output_len -= 1;
+    }
+    string[..output_len].as_bytes()
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_truncate_string_with_long_string() {
+        // each emoji requires 4 bytes
+        let string = "😁😁😁😁😁😁😁😁😁😁😁";
+        let byte_count = 5;
+        let bytes = truncate_str_to_byte_len(string, byte_count);
+        assert!(bytes.len() < byte_count);
+        let byte_vec = Vec::from(bytes);
+        let new_string = String::from_utf8(byte_vec).unwrap();
+        // so a string long at most 5 bytes can contain just one emoji
+        assert_eq!(new_string, "😁");
+    }
+
+    #[test]
+    fn test_truncate_string_with_short_string() {
+        let string = "😁😁😁😁😁😁😁😁😁😁😁";
+        let byte_count = 100;
+        let bytes = truncate_str_to_byte_len(string, byte_count);
+        assert_eq!(bytes.len(), string.len());
+        let byte_vec = Vec::from(bytes);
+        let new_string = String::from_utf8(byte_vec).unwrap();
+        assert_eq!(new_string, string);
+    }
+}

@@ -8,7 +8,6 @@ lazy_static::lazy_static! {
     static ref BASE_DIR: PathBuf = Path::new("tests").join("simpla-uncorrect_programs");
 }
 
-
 #[test]
 fn test_run_check_on_uncorrect_program() {
     for entry in read_dir(BASE_DIR.as_path()).unwrap() {
@@ -23,9 +22,3 @@ fn test_run_check_on_uncorrect_program() {
         assert!(!output.status.success());
     }
 }
-
-
-
-
-
-

@@ -11,9 +11,9 @@ use std::path::{Path, PathBuf};
 #[structopt(about = "Compile or Check a Simpla program")]
 enum Action {
     #[structopt(about = "Check a Simpla program for correctness")]
-    Check { 
+    Check {
         #[structopt(help = "Simpla source code input file")]
-        source_file: PathBuf 
+        source_file: PathBuf,
     },
     #[structopt(about = "Compile a Simpla program to Simpla bytecode")]
     Translate(Arguments),
@@ -115,7 +115,7 @@ fn main() {
         Err(msg) => {
             eprintln!("{}", msg);
             1
-        },
+        }
     };
     std::process::exit(exit);
 }

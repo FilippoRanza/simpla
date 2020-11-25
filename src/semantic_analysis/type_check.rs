@@ -74,7 +74,10 @@ fn coherent_operation<'a>(
                 }
             },
             OperatorKind::Relational => match left {
-                syntax_tree::Kind::Int | syntax_tree::Kind::Real | syntax_tree::Kind::Bool | syntax_tree::Kind::Str => Ok(syntax_tree::Kind::Bool),
+                syntax_tree::Kind::Int
+                | syntax_tree::Kind::Real
+                | syntax_tree::Kind::Bool
+                | syntax_tree::Kind::Str => Ok(syntax_tree::Kind::Bool),
                 _ => {
                     let err = IncoherentOperation::new(left, op.clone(), loc);
                     Err(SemanticError::IncoherentOperation(err))
@@ -748,7 +751,6 @@ mod test {
             for kind in &[Kind::Real, Kind::Int, Kind::Bool, Kind::Str] {
                 run_correct_coherent_test(kind, op, kind, &Kind::Bool);
             }
-
         }
 
         for op in &[Operator::And, Operator::Or] {
