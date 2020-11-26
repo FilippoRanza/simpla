@@ -8,7 +8,7 @@ use simpla_parser::syntax_tree;
 
 const ADDR_SIZE_ZERO: AddrSize = 0;
 const LOCAL_MASK: AddrSize = 1 << (ADDR_SIZE_ZERO.count_zeros() - 1);
-const MAX_STR_LEN : usize = (1 << (ADDR_SIZE_ZERO.count_zeros())) - 1;
+const MAX_STR_LEN: usize = (1 << (ADDR_SIZE_ZERO.count_zeros())) - 1;
 
 pub struct ByteCodeGenerator<'a> {
     buff: Vec<u8>,
@@ -51,6 +51,10 @@ impl<'a> ByteCodeGenerator<'a> {
         self.insert_address_command(opcode::JNE, index);
     }
 
+    fn insert_true_cond_jump(&mut self, index: AddrSize) {
+        self.insert_address_command(opcode::JEQ, index);
+    }
+
     fn insert_label(&mut self, index: AddrSize) {
         self.insert_address_command(opcode::LBL, index);
     }
@@ -74,15 +78,70 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn convert_expression(&mut self, expr: &'a syntax_tree::Expr) {
         match &expr.expr {
-            syntax_tree::ExprTree::Node(lhs, op, rhs) => {
-                self.convert_expression(lhs);
-                self.convert_expression(rhs);
-                self.buff
-                    .push(operator_by_kind(op, lhs.kind.borrow().as_ref().unwrap()));
-            }
+            syntax_tree::ExprTree::Node(lhs, op, rhs) => self.convert_node(lhs, op, rhs),
             syntax_tree::ExprTree::Factor(fact) => self.convert_factor(fact),
         }
     }
+
+    fn convert_node(
+        &mut self,
+        lhs: &'a syntax_tree::Expr,
+        op: &'a syntax_tree::Operator,
+        rhs: &'a syntax_tree::Expr,
+    ) {
+        if is_short_circuit_operator(op) {
+            self.convert_short_circuit_operator(lhs, op, rhs);
+        } else {
+            self.convert_standard_node(lhs, op, rhs);
+        }
+    }
+
+    fn convert_short_circuit_operator(
+        &mut self,
+        lhs: &'a syntax_tree::Expr,
+        op: &'a syntax_tree::Operator,
+        rhs: &'a syntax_tree::Expr,
+    ) {
+        self.convert_expression(lhs);
+        let cc_label = self.label_counter.count_one();
+        let end_label = self.label_counter.count_one();
+        match op {
+            syntax_tree::Operator::And => {
+                self.insert_false_cond_jump(cc_label);
+            }
+            syntax_tree::Operator::Or => {
+                self.insert_true_cond_jump(cc_label);
+            }
+            _ => panic!(),
+        }
+        self.convert_expression(rhs);
+        self.insert_uncond_jump(end_label);
+        self.insert_label(cc_label);
+        match op {
+            syntax_tree::Operator::And => {
+                self.convert_constant(&syntax_tree::Const::BoolConst(false));
+            }
+            syntax_tree::Operator::Or => {
+                self.convert_constant(&syntax_tree::Const::BoolConst(true));
+            }
+            _ => panic!(),
+        }
+
+        self.insert_label(end_label);
+    }
+
+    fn convert_standard_node(
+        &mut self,
+        lhs: &'a syntax_tree::Expr,
+        op: &'a syntax_tree::Operator,
+        rhs: &'a syntax_tree::Expr,
+    ) {
+        self.convert_expression(lhs);
+        self.convert_expression(rhs);
+        self.buff
+            .push(operator_by_kind(op, lhs.kind.borrow().as_ref().unwrap()));
+    }
+
     fn convert_factor(&mut self, fact: &'a syntax_tree::Factor) {
         match &fact.fact {
             syntax_tree::FactorValue::Id(id) => self.load_variable(id),
@@ -560,6 +619,13 @@ fn truncate_str_to_byte_len(string: &str, byte_count: usize) -> &[u8] {
         output_len -= 1;
     }
     string[..output_len].as_bytes()
+}
+
+fn is_short_circuit_operator(op: &syntax_tree::Operator) -> bool {
+    match op {
+        syntax_tree::Operator::And | syntax_tree::Operator::Or => true,
+        _ => false,
+    }
 }
 
 #[cfg(test)]

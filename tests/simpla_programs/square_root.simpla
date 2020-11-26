@@ -47,7 +47,7 @@ body
         # Hardcode max iteration to 150 and precision to 1e-8
         result = square_root(number, 150, 0.00000001);
         
-        writeln("square root of", number, "is", result);
+        writeln("square root of ", number, " is ", result);
     end;
     
     
