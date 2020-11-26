@@ -103,20 +103,20 @@ impl<'a> ByteCodeGenerator<'a> {
         rhs: &'a syntax_tree::Expr,
     ) {
         self.convert_expression(lhs);
-        let cc_label = self.label_counter.count_one();
+        let sc_label = self.label_counter.count_one();
         let end_label = self.label_counter.count_one();
         match op {
             syntax_tree::Operator::And => {
-                self.insert_false_cond_jump(cc_label);
+                self.insert_false_cond_jump(sc_label);
             }
             syntax_tree::Operator::Or => {
-                self.insert_true_cond_jump(cc_label);
+                self.insert_true_cond_jump(sc_label);
             }
             _ => panic!(),
         }
         self.convert_expression(rhs);
         self.insert_uncond_jump(end_label);
-        self.insert_label(cc_label);
+        self.insert_label(sc_label);
         match op {
             syntax_tree::Operator::And => {
                 self.convert_constant(&syntax_tree::Const::BoolConst(false));
