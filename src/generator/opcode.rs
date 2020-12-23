@@ -77,3 +77,5 @@ pub const LEQB: u8 = 75;
 pub const LESQB: u8 = 76;
 pub const EQB: u8 = 77;
 pub const NEB: u8 = 78;
+
+pub const INIT: u8 = 80;

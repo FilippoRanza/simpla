@@ -369,12 +369,19 @@ impl<'a> ByteCodeGenerator<'a> {
     pub fn switch_local_cache(&mut self, local: VarLookup<'a>) {
         self.local_cache = local;
     }
+
+    fn allocate_variables(&mut self, var_decl_list: &syntax_tree::VarDeclList, cmd: u8) {
+        let var_count = VariableCounter::count_variables(var_decl_list);
+        self.buff.push(cmd);
+        self.insert_bytes(&var_count.integer_count.to_be_bytes());
+        self.insert_bytes(&var_count.real_count.to_be_bytes());
+        self.insert_bytes(&var_count.boolean_count.to_be_bytes());
+        self.insert_bytes(&var_count.string_count.to_be_bytes());
+    }
 }
 
 impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     fn gen_function(&mut self, func: &'a syntax_tree::FuncDecl) {
-        self.buff.push(opcode::FUNC);
-
         self.gen_variables(&func.vars, Scope::Local);
         self.gen_block(&func.body, BlockType::General);
         if *self.buff.last().unwrap() != opcode::RET {
@@ -393,25 +400,41 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     }
 
     fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
-        for var_decl in var_decl_list {
-            for var in &var_decl.id_list {
-                let ((_, id), _) = self.local_cache.lookup(var);
-                let id = match scope {
-                    Scope::Global => *id,
-                    Scope::Local => *id + LOCAL_MASK,
-                };
-                let (first, second) = init_command(&var_decl.kind);
-                let data = defaut_value(&var_decl.kind);
-                self.buff.push(first);
-                self.insert_bytes(&data);
-                self.buff.push(second);
-                self.insert_bytes(&id.to_be_bytes());
-            }
-        }
+        let init_cmd = match scope {
+            Scope::Global => opcode::INIT,
+            Scope::Local => opcode::FUNC,
+        };
+        self.allocate_variables(var_decl_list, init_cmd);
     }
 
     fn get_result(self) -> Vec<u8> {
         self.buff
+    }
+}
+
+#[derive(std::default::Default)]
+struct VariableCounter {
+    integer_count: u16,
+    real_count: u16,
+    boolean_count: u16,
+    string_count: u16,
+}
+
+impl VariableCounter {
+    fn count_variables(var_decl_list: &syntax_tree::VarDeclList) -> Self {
+        var_decl_list
+            .iter()
+            .map(|decl| (&decl.kind, decl.id_list.len() as u16))
+            .fold(Self::default(), |mut acc, (kind, count)| {
+                match kind {
+                    syntax_tree::Kind::Int => acc.integer_count += count,
+                    syntax_tree::Kind::Real => acc.real_count += count,
+                    syntax_tree::Kind::Bool => acc.boolean_count += count,
+                    syntax_tree::Kind::Str => acc.string_count += count,
+                    _ => unreachable!(),
+                }
+                acc
+            })
     }
 }
 
@@ -633,6 +656,8 @@ mod test {
 
     use super::*;
 
+    use simpla_parser;
+
     #[test]
     fn test_truncate_string_with_long_string() {
         // each emoji requires 4 bytes
@@ -655,5 +680,49 @@ mod test {
         let byte_vec = Vec::from(bytes);
         let new_string = String::from_utf8(byte_vec).unwrap();
         assert_eq!(new_string, string);
+    }
+
+    #[test]
+    fn test_variable_counter() {
+        let simpla_code = r#"
+            body
+                writeln("Base Case");
+            end.
+        "#;
+        run_variable_count_test(&simpla_code, 0, 0, 0, 0);
+
+        let simpla_code = r#"
+            a, b, c: integer;
+            d: integer;
+
+            s: string;
+            q, w, e, r, t, y: boolean;
+            h, j, k: real;
+            p: string;
+
+            body
+                writeln("With some variables");
+            end.
+        "#;
+
+        run_variable_count_test(&simpla_code, 4, 3, 6, 2);
+    }
+
+    fn run_variable_count_test(
+        code: &str,
+        int_count: u16,
+        real_count: u16,
+        bool_count: u16,
+        str_count: u16,
+    ) {
+        let parser = simpla_parser::ProgramParser::new();
+        let tree = parser.parse(code).unwrap();
+
+        let var_count = VariableCounter::count_variables(&tree.global_vars);
+
+        assert_eq!(var_count.integer_count, int_count);
+        assert_eq!(var_count.real_count, real_count);
+        assert_eq!(var_count.boolean_count, bool_count);
+        assert_eq!(var_count.string_count, str_count);
     }
 }
