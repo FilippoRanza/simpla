@@ -343,17 +343,15 @@ impl<'a> ByteCodeGenerator<'a> {
     }
 
     fn convert_func_call(&mut self, func_call: &'a syntax_tree::FuncCall) {
-        self.buff.push(opcode::PARAM);
+        let f_id = self.function_index.get_function_index(&func_call.id);
+        self.insert_address_command(opcode::PARAM, f_id);
 
         for (index, expr) in func_call.args.iter().enumerate() {
             let addr = self.param_addr.get_parameter_address(&func_call.id, index);
             self.convert_parameter(expr, addr);
         }
 
-        self.insert_address_command(
-            opcode::CALL,
-            self.function_index.get_function_index(&func_call.id),
-        );
+        self.insert_address_command(opcode::CALL, f_id);
     }
 
     fn convert_parameter(&mut self, expr: &'a syntax_tree::Expr, addr: AddrSize) {
@@ -373,10 +371,7 @@ impl<'a> ByteCodeGenerator<'a> {
     fn allocate_variables(&mut self, var_decl_list: &syntax_tree::VarDeclList, cmd: u8) {
         let var_count = VariableCounter::count_variables(var_decl_list);
         self.buff.push(cmd);
-        self.insert_bytes(&var_count.integer_count.to_be_bytes());
-        self.insert_bytes(&var_count.real_count.to_be_bytes());
-        self.insert_bytes(&var_count.boolean_count.to_be_bytes());
-        self.insert_bytes(&var_count.string_count.to_be_bytes());
+        self.insert_bytes(&var_count.vectorize());
     }
 }
 
@@ -435,6 +430,14 @@ impl VariableCounter {
                 }
                 acc
             })
+    }
+
+    fn vectorize(self) -> [u8; 4 * 2] {
+        let [i1, i2] = self.integer_count.to_be_bytes();
+        let [r1, r2] = self.real_count.to_be_bytes();
+        let [b1, b2] = self.boolean_count.to_be_bytes();
+        let [s1, s2] = self.string_count.to_be_bytes();
+        [i1, i2, r1, r2, b1, b2, s1, s2]
     }
 }
 
@@ -497,26 +500,6 @@ impl UnaryOp {
             Self::IntNeg => opcode::NEGI,
             Self::BoolNeg => opcode::NOT,
         }
-    }
-}
-
-fn init_command(kind: &syntax_tree::Kind) -> (u8, u8) {
-    match kind {
-        syntax_tree::Kind::Bool => (opcode::LDBC, opcode::STRB),
-        syntax_tree::Kind::Int => (opcode::LDIC, opcode::STRI),
-        syntax_tree::Kind::Real => (opcode::LDRC, opcode::STRR),
-        syntax_tree::Kind::Str => (opcode::LDSC, opcode::STRS),
-        syntax_tree::Kind::Void => unreachable!(),
-    }
-}
-
-fn defaut_value(kind: &syntax_tree::Kind) -> Vec<u8> {
-    match kind {
-        syntax_tree::Kind::Bool => Vec::from([0]),
-        syntax_tree::Kind::Int => Vec::from((0 as i32).to_be_bytes()),
-        syntax_tree::Kind::Real => Vec::from((0.0 as f64).to_be_bytes()),
-        syntax_tree::Kind::Str => Vec::from((0 as AddrSize).to_be_bytes()),
-        syntax_tree::Kind::Void => unreachable!(),
     }
 }
 
@@ -656,8 +639,6 @@ mod test {
 
     use super::*;
 
-    use simpla_parser;
-
     #[test]
     fn test_truncate_string_with_long_string() {
         // each emoji requires 4 bytes
@@ -681,6 +662,8 @@ mod test {
         let new_string = String::from_utf8(byte_vec).unwrap();
         assert_eq!(new_string, string);
     }
+
+    use simpla_parser;
 
     #[test]
     fn test_variable_counter() {
