@@ -370,6 +370,8 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn allocate_variables(&mut self, var_decl_list: &syntax_tree::VarDeclList, cmd: u8) {
         let var_count = VariableCounter::count_variables(var_decl_list);
+        dbg!(&var_count);
+        dbg!(&var_decl_list);
         self.buff.push(cmd);
         self.insert_bytes(&var_count.vectorize());
     }
@@ -377,7 +379,11 @@ impl<'a> ByteCodeGenerator<'a> {
 
 impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     fn gen_function(&mut self, func: &'a syntax_tree::FuncDecl) {
-        self.gen_variables(&func.vars, Scope::Local);
+        self.buff.push(opcode::FUNC);
+        let var_count = VariableCounter::count_variables(&func.vars);
+        let var_count = var_count.count_parameters(&func.params);
+        self.buff.push(opcode::INIT);
+        self.insert_bytes(&var_count.vectorize());
         self.gen_block(&func.body, BlockType::General);
         if *self.buff.last().unwrap() != opcode::RET {
             self.buff.push(opcode::RET);
@@ -397,7 +403,7 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
         let init_cmd = match scope {
             Scope::Global => opcode::INIT,
-            Scope::Local => opcode::FUNC,
+            Scope::Local => opcode::INIT,
         };
         self.allocate_variables(var_decl_list, init_cmd);
     }
@@ -407,7 +413,7 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
     }
 }
 
-#[derive(std::default::Default)]
+#[derive(std::default::Default, Debug)]
 struct VariableCounter {
     integer_count: u16,
     real_count: u16,
@@ -430,6 +436,19 @@ impl VariableCounter {
                 }
                 acc
             })
+    }
+
+    fn count_parameters(mut self, param_list: &syntax_tree::ParamList) -> Self {
+        for par_decl in param_list {
+            match par_decl.kind {
+                syntax_tree::Kind::Int => self.integer_count += 1,
+                syntax_tree::Kind::Real => self.real_count += 1,
+                syntax_tree::Kind::Str => self.string_count += 1,
+                syntax_tree::Kind::Bool => self.boolean_count += 1,
+                _ => unreachable!()
+            }
+        }
+        self
     }
 
     fn vectorize(self) -> [u8; 4 * 2] {
