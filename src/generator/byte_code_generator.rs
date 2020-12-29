@@ -398,12 +398,8 @@ impl<'a> CodeGenerator<'a> for ByteCodeGenerator<'a> {
         }
     }
 
-    fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList, scope: Scope) {
-        let init_cmd = match scope {
-            Scope::Global => opcode::INIT,
-            Scope::Local => opcode::INIT,
-        };
-        self.allocate_variables(var_decl_list, init_cmd);
+    fn gen_variables(&mut self, var_decl_list: &'a syntax_tree::VarDeclList) {
+        self.allocate_variables(var_decl_list, opcode::INIT);
     }
 
     fn get_result(self) -> Vec<u8> {

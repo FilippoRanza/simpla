@@ -22,7 +22,7 @@ fn translate<'a>(
     tranlator: &mut ByteCodeGenerator<'a>,
     global_cache: &'a GlobalVarCache<'a>,
 ) {
-    tranlator.gen_variables(&prog.global_vars, Scope::Global);
+    tranlator.gen_variables(&prog.global_vars);
 
     tranlator.gen_block(&prog.body, BlockType::Main);
 
