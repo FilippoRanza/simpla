@@ -370,8 +370,6 @@ impl<'a> ByteCodeGenerator<'a> {
 
     fn allocate_variables(&mut self, var_decl_list: &syntax_tree::VarDeclList, cmd: u8) {
         let var_count = VariableCounter::count_variables(var_decl_list);
-        dbg!(&var_count);
-        dbg!(&var_decl_list);
         self.buff.push(cmd);
         self.insert_bytes(&var_count.vectorize());
     }
