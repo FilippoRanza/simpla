@@ -602,8 +602,6 @@ fn real_operator(op: &syntax_tree::Operator) -> u8 {
 
 fn bool_operator(op: &syntax_tree::Operator) -> u8 {
     match op {
-        syntax_tree::Operator::And => opcode::AND,
-        syntax_tree::Operator::Or => opcode::OR,
         syntax_tree::Operator::Equal => opcode::EQB,
         syntax_tree::Operator::NotEqual => opcode::NEB,
         syntax_tree::Operator::Greater => opcode::GRB,
@@ -616,8 +614,6 @@ fn bool_operator(op: &syntax_tree::Operator) -> u8 {
 
 fn str_operator(op: &syntax_tree::Operator) -> u8 {
     match op {
-        syntax_tree::Operator::And => opcode::AND,
-        syntax_tree::Operator::Or => opcode::OR,
         syntax_tree::Operator::Equal => opcode::EQS,
         syntax_tree::Operator::NotEqual => opcode::NES,
         syntax_tree::Operator::Greater => opcode::GRS,

@@ -20,8 +20,6 @@ pub const EQR: u8 = 18;
 pub const NER: u8 = 19;
 pub const CSTI: u8 = 20;
 pub const CSTR: u8 = 21;
-pub const OR: u8 = 22;
-pub const AND: u8 = 23;
 pub const RDI: u8 = 24; // 24 % 4 = 0
 pub const RDR: u8 = 25; // 25 % 4 = 1
 pub const RDB: u8 = 26; // 26 % 4 = 2
