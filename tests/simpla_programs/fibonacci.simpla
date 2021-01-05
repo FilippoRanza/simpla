@@ -21,14 +21,14 @@ body
     writeln("Fibonacci");
     for i = 0 to count do
         # Fibonacci nubers start with 0 and 1
-        write(iter_add_series(0, 1, i));
+        write(iter_add_series(0, 1, i), " ");
     end;
     writeln();
 
     writeln("Lucas");
     for i = 0 to count do
         # Lucas numbers start with 2 and 1
-        write(iter_add_series(2, 1, i));
+        write(iter_add_series(2, 1, i), " ");
     end;
     writeln();
 end.
